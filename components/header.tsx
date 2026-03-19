@@ -3,19 +3,31 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Train, Menu, X } from "lucide-react";
+import { Train, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navItems = [
-  { href: "/", label: "Submit Complaint" },
+  { href: "/", label: "Home" },
+  { href: "/#submit", label: "Submit Complaint" },
   { href: "/track", label: "Track Status" },
-  { href: "/admin", label: "Admin Dashboard" },
+  { href: "/admin", label: "Dashboard" },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains("dark");
+    setDarkMode(isDark);
+  }, []);
+
+  const toggleDarkMode = () => {
+    document.documentElement.classList.toggle("dark");
+    setDarkMode(!darkMode);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -25,8 +37,8 @@ export function Header() {
             <Train className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold text-foreground">Rail Madad</span>
-            <span className="text-xs text-muted-foreground">AI-Powered Complaints</span>
+            <span className="text-lg font-bold text-foreground">Rail Madad AI</span>
+            <span className="text-[10px] text-muted-foreground">Smart Railway Complaints</span>
           </div>
         </Link>
 
@@ -46,17 +58,32 @@ export function Header() {
               {item.label}
             </Link>
           ))}
+          <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="ml-2">
+            {darkMode ? (
+              <Sun className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <Moon className="h-5 w-5 text-muted-foreground" />
+            )}
+          </Button>
         </nav>
 
         {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="flex md:hidden items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+            {darkMode ? (
+              <Sun className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <Moon className="h-5 w-5 text-muted-foreground" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}

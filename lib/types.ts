@@ -19,8 +19,10 @@ export interface Complaint {
   description: string;
   imageUrl?: string;
   location: {
-    latitude: number;
-    longitude: number;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
     trainNumber?: string;
     coachNumber?: string;
     station?: string;

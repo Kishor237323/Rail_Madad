@@ -246,7 +246,9 @@ export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTab
                     <div>
                       <p className="text-sm text-muted-foreground">Location</p>
                       <p className="font-medium text-foreground">
-                        {selectedComplaint.location.latitude.toFixed(4)}, {selectedComplaint.location.longitude.toFixed(4)}
+                        {selectedComplaint.location.coordinates
+                          ? `${selectedComplaint.location.coordinates.latitude.toFixed(4)}, ${selectedComplaint.location.coordinates.longitude.toFixed(4)}`
+                          : "N/A"}
                       </p>
                     </div>
                   </div>

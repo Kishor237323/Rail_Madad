@@ -281,7 +281,9 @@ function TrackPageContent() {
                       <div>
                         <p className="text-sm text-muted-foreground">Location</p>
                         <p className="font-medium text-foreground">
-                          {complaint.location.latitude.toFixed(4)}, {complaint.location.longitude.toFixed(4)}
+                          {complaint.location.coordinates 
+                            ? `${complaint.location.coordinates.latitude.toFixed(4)}, ${complaint.location.coordinates.longitude.toFixed(4)}`
+                            : "Location not available"}
                         </p>
                       </div>
                     </div>

@@ -107,13 +107,30 @@ export function generateMockComplaints(count: number): Complaint[] {
     const timestamp = randomDate(30);
     const priority = randomElement(priorities);
 
+    // Random coordinates across India
+    const indianCities = [
+      { lat: 28.6139, lng: 77.2090 },  // Delhi
+      { lat: 19.0760, lng: 72.8777 },  // Mumbai
+      { lat: 13.0827, lng: 80.2707 },  // Chennai
+      { lat: 22.5726, lng: 88.3639 },  // Kolkata
+      { lat: 12.9716, lng: 77.5946 },  // Bangalore
+      { lat: 17.3850, lng: 78.4867 },  // Hyderabad
+      { lat: 23.0225, lng: 72.5714 },  // Ahmedabad
+      { lat: 18.5204, lng: 73.8567 },  // Pune
+      { lat: 26.9124, lng: 75.7873 },  // Jaipur
+      { lat: 21.1702, lng: 72.8311 },  // Surat
+    ];
+    const city = randomElement(indianCities);
+    
     const complaint: Complaint = {
       id: `RM${(Date.now() - i * 1000000).toString(36).toUpperCase()}`,
       category,
       description: randomElement(descriptions[category]),
       location: {
-        latitude: 12.9716 + (Math.random() - 0.5) * 10,
-        longitude: 77.5946 + (Math.random() - 0.5) * 10,
+        coordinates: {
+          latitude: city.lat + (Math.random() - 0.5) * 0.5,
+          longitude: city.lng + (Math.random() - 0.5) * 0.5,
+        },
         trainNumber: randomElement(trainNumbers),
         coachNumber: randomElement(coaches),
       },
