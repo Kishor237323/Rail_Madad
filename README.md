@@ -1,35 +1,125 @@
-# Rail_Madad
+🚆 Rail Madad – AI Powered Complaint Management System
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+An intelligent complaint management system designed to enhance the existing Rail Madad platform using AI, image processing, and real-time metadata.
 
-## Built with v0
+This project enables passengers to submit complaints using images, which are automatically analyzed and categorized using a deep learning model, improving response time and efficiency.
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_DqrqDSJhDCw5nCjvTAO1VQIWcLjx)
-
-## Getting Started
-
-First, run the development server:
-
-```bash
+🌟 Features
+📸 Image-based Complaint Submission
+🤖 AI Classification (Vision-Language Model)
+📍 Automatic GPS Location Capture
+🕒 Timestamp Extraction (EXIF + fallback)
+🔍 OCR Text Extraction from Images
+🗺️ Live Map Integration (Leaflet.js)
+⚡ Real-time Complaint Processing API
+🧠 Smart Categorization (cleanliness, electrical, infrastructure issues, etc.)
+🧠 How It Works
+User uploads an image complaint
+System extracts:
+Timestamp (EXIF)
+GPS location
+Image is sent to backend API
+AI model classifies complaint category
+OCR extracts text (if any)
+Complaint is stored in database
+Response is returned with:
+Category
+Confidence
+Location
+Image URL
+🏗️ Tech Stack
+Frontend
+Next.js (v0 based UI)
+HTML, CSS, JavaScript
+Leaflet.js (Map integration)
+Backend
+Flask API
+SQLite Database
+AI / ML
+Qwen2-VL Vision Language Model
+PyTorch
+Transformers
+Other Tools
+Tesseract OCR
+Geopy (Reverse Geocoding)
+EXIF.js
+📁 Project Structure
+Rail_Madad/
+│── app/ (Next.js frontend)
+│── templates/
+│   └── index.html (Image upload UI)
+│── uploads/ (Stored complaint images)
+│── model.py (AI classification logic)
+│── app.py (Flask backend)
+│── complaints.db (Database)
+│── requirements.txt
+🚀 Getting Started
+🔹 Frontend (Next.js)
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open 👉 http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+🔹 Backend (Flask)
+pip install -r requirements.txt
+python app.py
 
-## Learn More
+Backend runs on 👉 http://127.0.0.1:5000
 
-To learn more, take a look at the following resources:
+📡 API Endpoint
+POST /api/upload
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+Form Data:
 
-<a href="https://v0.app/chat/api/kiro/clone/Kishor237323/Rail_Madad" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+image → complaint image
+lat → latitude (optional)
+lon → longitude (optional)
+timestamp → image timestamp
+
+Response:
+
+{
+  "predicted_category": "dirty toilet",
+  "confidence": 92,
+  "place": "Bangalore, India",
+  "ocr_text": "...",
+  "image_url": "/uploads/file.jpg"
+}
+🧪 AI Categories
+
+The model classifies complaints into categories like:
+
+Dirty Toilet
+Broken Socket
+Fan Not Working
+Overcrowded Coach
+Water Leakage
+Torn Seat
+Broken Window
+Cleanliness Issue
+Electrical Issue
+🎯 Project Objective
+
+To automate railway complaint management by:
+
+Reducing manual workload
+Improving classification accuracy
+Enabling faster complaint resolution
+Providing better passenger experience
+
+As highlighted in the project report, the system improves efficiency, transparency, and prioritization in grievance handling.
+
+🔮 Future Enhancements
+📊 Admin Dashboard with analytics
+🔥 Heatmaps for complaint density
+☁️ Cloud deployment (AWS / Render)
+📱 Mobile app integration
+🎥 Video-based complaint support
+👨‍💻 Team
+C H Prabhu Kishor
+Harshan Gowda K S
+Pothula Bharath
+Sachin
+📜 License
+
+This project is for academic and research purposes.
