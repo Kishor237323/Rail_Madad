@@ -36,7 +36,7 @@ Backend
 Flask API
 SQLite Database
 AI / ML
-Qwen2-VL Vision Language Model
+ VIT_B_16_ Model
 PyTorch
 Transformers
 Other Tools
@@ -58,13 +58,13 @@ Rail_Madad/
 npm install
 npm run dev
 
-Open 👉 http://localhost:3000
+
 
 🔹 Backend (Flask)
 pip install -r requirements.txt
 python app.py
 
-Backend runs on 👉 http://127.0.0.1:5000
+
 
 📡 API Endpoint
 POST /api/upload
