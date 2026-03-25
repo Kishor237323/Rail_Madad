@@ -21,8 +21,8 @@ export async function GET(request: Request) {
       ? {
           $or: [
             { assignedUsernames: { $in: [username] } },
-            { assignedTo: { $in: ["RPF"] } },
-            { assignedTo: "RPF" },
+            { assignedTo: { $in: [username] } },
+            { assignedTo: username },
           ],
         }
       : {

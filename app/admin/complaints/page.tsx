@@ -1,12 +1,58 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ComplaintsTable } from "@/components/admin/complaints-table";
-import { mockComplaints, getComplaintStats } from "@/lib/mock-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import type { Complaint } from "@/lib/types";
+
+type ComplaintsApiResponse = {
+  complaints?: Array<Omit<Complaint, "timestamp" | "resolvedAt"> & { timestamp: string; resolvedAt?: string | null }>;
+  stats?: {
+    total?: number;
+    pending?: number;
+    resolved?: number;
+    critical?: number;
+  };
+};
 
 export default function ComplaintsListPage() {
-  const stats = getComplaintStats();
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [stats, setStats] = useState({ total: 0, pending: 0, resolved: 0, critical: 0 });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const response = await fetch("/api/admin/complaints", { cache: "no-store" });
+        const data = (await response.json()) as ComplaintsApiResponse;
+
+        if (!response.ok) {
+          setComplaints([]);
+          setStats({ total: 0, pending: 0, resolved: 0, critical: 0 });
+          return;
+        }
+
+        const mapped = (data.complaints || []).map((item) => ({
+          ...item,
+          timestamp: new Date(item.timestamp),
+          resolvedAt: item.resolvedAt ? new Date(item.resolvedAt) : undefined,
+        })) as Complaint[];
+
+        setComplaints(mapped);
+        setStats({
+          total: Number(data.stats?.total || 0),
+          pending: Number(data.stats?.pending || 0),
+          resolved: Number(data.stats?.resolved || 0),
+          critical: Number(data.stats?.critical || 0),
+        });
+      } catch {
+        setComplaints([]);
+        setStats({ total: 0, pending: 0, resolved: 0, critical: 0 });
+      }
+    };
+
+    load();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -75,7 +121,7 @@ export default function ComplaintsListPage() {
       </div>
 
       {/* Complaints Table */}
-      <ComplaintsTable complaints={mockComplaints} />
+      <ComplaintsTable complaints={complaints} />
     </div>
   );
 }

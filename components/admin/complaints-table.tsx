@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,11 +51,31 @@ const priorityColors: Record<ComplaintPriority, string> = {
 };
 
 export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTableProps) {
+  const [mounted, setMounted] = useState(false);
   const [complaints, setComplaints] = useState(initialComplaints);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setComplaints(initialComplaints);
+  }, [initialComplaints]);
+
+  const formatDate = (date: Date) =>
+    new Intl.DateTimeFormat("en-GB", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "UTC",
+    }).format(date);
 
   const filteredComplaints = complaints.filter((complaint) => {
     const matchesSearch =
@@ -86,6 +106,19 @@ export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTab
     }
   };
 
+  if (!mounted) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Complaints</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="py-6 text-sm text-muted-foreground">Loading complaints...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card>
@@ -99,11 +132,11 @@ export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTab
                   placeholder="Search..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 w-full sm:w-[200px]"
+                  className="pl-9 w-full sm:w-50"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectTrigger className="w-full sm:w-35">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -116,7 +149,7 @@ export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTab
                 </SelectContent>
               </Select>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -166,7 +199,7 @@ export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTab
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
-                      {complaint.timestamp.toLocaleDateString()}
+                      {formatDate(complaint.timestamp)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -271,7 +304,7 @@ export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTab
                     <div>
                       <p className="text-sm text-muted-foreground">Submitted</p>
                       <p className="font-medium text-foreground">
-                        {selectedComplaint.timestamp.toLocaleString()}
+                        {formatDate(selectedComplaint.timestamp)}
                       </p>
                     </div>
                   </div>

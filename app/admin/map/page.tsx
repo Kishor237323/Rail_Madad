@@ -1,8 +1,8 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { mockComplaints, getComplaintStats } from "@/lib/mock-data";
 import { CATEGORY_LABELS, PRIORITY_LABELS } from "@/lib/types";
 import { MapPin, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
 import dynamic from "next/dynamic";
+import type { Complaint } from "@/lib/types";
 
 const ComplaintMap = dynamic(
   () => import("@/components/admin/complaint-map").then((mod) => mod.ComplaintMap),
@@ -29,17 +29,59 @@ const ComplaintMap = dynamic(
 );
 
 export default function MapViewPage() {
-  const stats = getComplaintStats();
+  const [allComplaints, setAllComplaints] = useState<Complaint[]>([]);
+  const [stats, setStats] = useState({ total: 0, critical: 0, pending: 0, resolved: 0 });
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const filteredComplaints = mockComplaints.filter((complaint) => {
-    if (categoryFilter !== "all" && complaint.category !== categoryFilter) return false;
-    if (priorityFilter !== "all" && complaint.priority !== priorityFilter) return false;
-    if (statusFilter !== "all" && complaint.status !== statusFilter) return false;
-    return true;
-  });
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const response = await fetch("/api/admin/complaints", { cache: "no-store" });
+        const data = (await response.json()) as {
+          complaints?: Array<Omit<Complaint, "timestamp" | "resolvedAt"> & { timestamp: string; resolvedAt?: string | null }>;
+          stats?: { total?: number; critical?: number; pending?: number; resolved?: number };
+        };
+
+        if (!response.ok) {
+          setAllComplaints([]);
+          setStats({ total: 0, critical: 0, pending: 0, resolved: 0 });
+          return;
+        }
+
+        setAllComplaints(
+          (data.complaints || []).map((item) => ({
+            ...item,
+            timestamp: new Date(item.timestamp),
+            resolvedAt: item.resolvedAt ? new Date(item.resolvedAt) : undefined,
+          })) as Complaint[]
+        );
+        setStats({
+          total: Number(data.stats?.total || 0),
+          critical: Number(data.stats?.critical || 0),
+          pending: Number(data.stats?.pending || 0),
+          resolved: Number(data.stats?.resolved || 0),
+        });
+      } catch {
+        setAllComplaints([]);
+        setStats({ total: 0, critical: 0, pending: 0, resolved: 0 });
+      }
+    };
+
+    load();
+  }, []);
+
+  const filteredComplaints = useMemo(
+    () =>
+      allComplaints.filter((complaint) => {
+        if (categoryFilter !== "all" && complaint.category !== categoryFilter) return false;
+        if (priorityFilter !== "all" && complaint.priority !== priorityFilter) return false;
+        if (statusFilter !== "all" && complaint.status !== statusFilter) return false;
+        return true;
+      }),
+    [allComplaints, categoryFilter, priorityFilter, statusFilter]
+  );
 
   const complaintsWithLocation = filteredComplaints.filter(
     (c) => c.location?.coordinates

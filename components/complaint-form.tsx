@@ -68,6 +68,46 @@ const MOCK_PNR_DB: Record<string, TrainDetails> = {
     from: "Mumbai Central",
     to: "New Delhi",
   },
+  "1620701234": {
+    trainName: "Mysore Express",
+    trainNumber: "16207",
+    coach: "S5",
+    seat: "36",
+    from: "Mysuru Junction",
+    to: "MGR Chennai Central",
+  },
+  "1620705678": {
+    trainName: "Mysore Express",
+    trainNumber: "16207",
+    coach: "B2",
+    seat: "21",
+    from: "Mysuru Junction",
+    to: "MGR Chennai Central",
+  },
+  "1620799012": {
+    trainName: "Mysore Express",
+    trainNumber: "16207",
+    coach: "C3",
+    seat: "14",
+    from: "Mysuru Junction",
+    to: "MGR Chennai Central",
+  },
+  "2268794321": {
+    trainName: "KSR Bengaluru - Mysuru Express",
+    trainNumber: "16215",
+    coach: "D2",
+    seat: "33",
+    from: "Yeshvantpur Junction",
+    to: "Mysuru Junction",
+  },
+  "2268796543": {
+    trainName: "Mysore Express",
+    trainNumber: "16207",
+    coach: "S3",
+    seat: "41",
+    from: "Yeshvantpur Junction",
+    to: "Mysuru Junction",
+  },
 };
 
 export function ComplaintForm() {
@@ -97,6 +137,9 @@ export function ComplaintForm() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState("");
   const [isCapturingLocation, setIsCapturingLocation] = useState(false);
+  const [useManualLocation, setUseManualLocation] = useState(false);
+  const [manualLatitude, setManualLatitude] = useState("");
+  const [manualLongitude, setManualLongitude] = useState("");
 
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -272,9 +315,38 @@ export function ComplaintForm() {
       return;
     }
 
-    const capturedLocation = await captureCurrentLocation();
-    if (!capturedLocation) {
-      return;
+    let finalLocation: { latitude: number; longitude: number } | null = null;
+
+    if (useManualLocation) {
+      const parsedLatitude = Number(manualLatitude);
+      const parsedLongitude = Number(manualLongitude);
+
+      if (Number.isNaN(parsedLatitude) || Number.isNaN(parsedLongitude)) {
+        setLocationError("Please enter valid latitude and longitude values.");
+        return;
+      }
+
+      if (parsedLatitude < -90 || parsedLatitude > 90 || parsedLongitude < -180 || parsedLongitude > 180) {
+        setLocationError("Latitude must be between -90 and 90, and longitude between -180 and 180.");
+        return;
+      }
+
+      finalLocation = {
+        latitude: parsedLatitude,
+        longitude: parsedLongitude,
+      };
+      setLocation(finalLocation);
+      setLocationError("");
+    } else {
+      finalLocation = location;
+
+      if (!finalLocation) {
+        finalLocation = await captureCurrentLocation();
+      }
+
+      if (!finalLocation) {
+        return;
+      }
     }
 
     try {
@@ -316,7 +388,7 @@ export function ComplaintForm() {
           category: complaintMode === "emergency" ? category : undefined,
           description,
           trainDetails,
-          location: capturedLocation,
+          location: finalLocation,
           imagePath,
         }),
       });
@@ -708,16 +780,59 @@ export function ComplaintForm() {
               <h3 className="font-medium text-slate-900">Location Capture</h3>
             </div>
 
+            <label className="mb-3 flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={useManualLocation}
+                onChange={(e) => {
+                  setUseManualLocation(e.target.checked);
+                  setLocationError("");
+                }}
+              />
+              Use manual latitude/longitude (testing)
+            </label>
+
             <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm text-slate-700">
               <p className="font-medium">Helps in faster resolution</p>
               <p className="mt-1">
-                {complaintMode === "emergency"
-                  ? "Location will be captured automatically during emergency complaint submission."
-                  : "Location can be captured now or automatically during submission."}
+                {useManualLocation
+                  ? "Manual coordinates will be used for routing during submission."
+                  : complaintMode === "emergency"
+                    ? "Location will be captured automatically during emergency complaint submission."
+                    : "Location can be captured now or automatically during submission."}
               </p>
             </div>
 
-            {complaintMode === "train" ? (
+            {useManualLocation ? (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="manual-latitude" className="mb-2 block text-slate-700">
+                    Latitude
+                  </Label>
+                  <Input
+                    id="manual-latitude"
+                    placeholder="e.g. 12.971600"
+                    value={manualLatitude}
+                    onChange={(e) => setManualLatitude(e.target.value)}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="manual-longitude" className="mb-2 block text-slate-700">
+                    Longitude
+                  </Label>
+                  <Input
+                    id="manual-longitude"
+                    placeholder="e.g. 77.594600"
+                    value={manualLongitude}
+                    onChange={(e) => setManualLongitude(e.target.value)}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {complaintMode === "train" && !useManualLocation ? (
               <Button
                 type="button"
                 variant="outline"
@@ -730,7 +845,7 @@ export function ComplaintForm() {
               </Button>
             ) : null}
 
-            {isCapturingLocation ? (
+            {isCapturingLocation && !useManualLocation ? (
               <p className="mt-3 flex items-center gap-2 text-sm text-blue-700">
                 <Spinner className="h-4 w-4" />
                 Capturing your current location...

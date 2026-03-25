@@ -41,6 +41,7 @@ const isEmergencyCategory = (category: string) => {
 
 type DashboardComplaintResponse = {
   complaintId?: string;
+  imagePath?: string | null;
   train?: {
     name?: string;
     number?: string;
@@ -111,7 +112,7 @@ export function RailwayStaffDashboard({ staffUsername }: { staffUsername: string
             reportedAt: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             priority: item.priority || "normal",
             status: item.status || "pending",
-            image: "/placeholder.jpg",
+            image: item.imagePath || undefined,
             fullDescription: item.description || "No description provided.",
           } as StaffComplaint;
         });
@@ -267,6 +268,13 @@ export function RailwayStaffDashboard({ staffUsername }: { staffUsername: string
               <CheckCircle2 className="mr-1 h-4 w-4" />
               Mark Resolved
             </Button>
+            {complaint.image ? (
+              <Button asChild type="button" size="sm" variant="secondary">
+                <a href={complaint.image} target="_blank" rel="noreferrer">
+                  View Image
+                </a>
+              </Button>
+            ) : null}
           </div>
         </CardContent>
       </Card>

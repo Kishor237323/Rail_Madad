@@ -18,10 +18,12 @@ import { Spinner } from "@/components/ui/spinner";
 
 export function AdminNavbar() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const isDark = document.documentElement.classList.contains("dark");
     setDarkMode(isDark);
   }, []);
@@ -64,6 +66,19 @@ export function AdminNavbar() {
           )}
         </Button>
 
+        {!mounted ? (
+          <>
+            <Button variant="ghost" size="icon" className="relative" disabled>
+              <Bell className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            <Button variant="ghost" className="flex items-center gap-2 px-2" disabled>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <User className="h-4 w-4" />
+              </div>
+            </Button>
+          </>
+        ) : (
+          <>
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -130,6 +145,8 @@ export function AdminNavbar() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+          </>
+        )}
       </div>
     </header>
   );

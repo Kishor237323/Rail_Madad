@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getDatabase } from "@/lib/server/db";
+import { findNearestStation, findNearestStationFromNames, getStations, normalizeStationName } from "@/lib/server/stations";
 
 const registerComplaintSchema = z.object({
   complaintMode: z.enum(["train", "emergency"]),
@@ -48,11 +49,11 @@ function routeComplaint(category: string) {
   const normalized = category.toLowerCase();
 
   if (["security", "crowd"].includes(normalized)) {
-    return ["RPF", "Railway Staff"];
+    return ["RPF"];
   }
 
   if (["medical", "fire"].includes(normalized)) {
-    return ["Railway Staff", "Station Master"];
+    return ["RPF", "Station Master"];
   }
 
   return ["Railway Staff"];
@@ -78,7 +79,6 @@ export async function POST(request: Request) {
 
     const coach = data.trainDetails?.coach?.trim().toUpperCase();
     const trainNumber = data.trainDetails?.trainNumber?.trim();
-    const incidentStation = (data.trainDetails?.from || "").trim();
 
     const complaintId = generateComplaintId();
     const normalizedEmergencyCategory = (data.category || "").trim();
@@ -99,6 +99,16 @@ export async function POST(request: Request) {
     const assignedUsernames = new Set<string>();
     let assignedTo = routeComplaint(internalCategory);
     let assignedStaffUsername: string | null = null;
+    let nearestStation: string | null = null;
+
+    const latitude = data.location?.latitude;
+    const longitude = data.location?.longitude;
+    const allStations = typeof latitude === "number" && typeof longitude === "number" ? await getStations() : [];
+
+    if (typeof latitude === "number" && typeof longitude === "number") {
+      const nearest = await findNearestStation(latitude, longitude);
+      nearestStation = nearest?.name || null;
+    }
 
     // Train complaint routing: assign to the staff mapped to train_number
     if (assignedTo.length === 1 && assignedTo[0] === "Railway Staff") {
@@ -125,27 +135,66 @@ export async function POST(request: Request) {
       const role = getRoleForTeam(target);
 
       if (role === "rpf") {
-        const rpfUsers = await db
-          .collection<{ username: string }>("users")
-          .find(incidentStation ? { role, station: incidentStation } : { role })
-          .toArray();
+        const allRpfUsers = await db.collection<{ username: string; station?: string }>("users").find({ role }).toArray();
 
-        (rpfUsers.length ? rpfUsers : await db.collection<{ username: string }>("users").find({ role }).toArray()).forEach(
-          (user) => assignedUsernames.add(user.username)
-        );
+        const normalizedNearest = normalizeStationName(nearestStation || "");
+        let rpfUsers = normalizedNearest
+          ? allRpfUsers.filter((user) => normalizeStationName(user.station || "") === normalizedNearest)
+          : [];
+
+        if (!rpfUsers.length && typeof latitude === "number" && typeof longitude === "number") {
+          const nearestRpfStation = findNearestStationFromNames(
+            allRpfUsers.map((user) => user.station || "").filter(Boolean),
+            latitude,
+            longitude,
+            allStations
+          );
+
+          if (nearestRpfStation) {
+            const normalizedNearestRpf = normalizeStationName(nearestRpfStation.name);
+            rpfUsers = allRpfUsers.filter((user) => normalizeStationName(user.station || "") === normalizedNearestRpf);
+          }
+        }
+
+        if (rpfUsers.length) {
+          rpfUsers.forEach((user) => assignedUsernames.add(user.username));
+        } else {
+          if (allRpfUsers.length) {
+            assignedUsernames.add(allRpfUsers[0].username);
+          }
+        }
         continue;
       }
 
       if (role === "station_master") {
-        const stationUsers = await db
-          .collection<{ username: string }>("users")
-          .find(incidentStation ? { role, station: incidentStation } : { role })
-          .toArray();
+        const allStationUsers = await db.collection<{ username: string; station?: string }>("users").find({ role }).toArray();
 
-        (stationUsers.length
-          ? stationUsers
-          : await db.collection<{ username: string }>("users").find({ role }).toArray()
-        ).forEach((user) => assignedUsernames.add(user.username));
+        const normalizedNearest = normalizeStationName(nearestStation || "");
+        let stationUsers = normalizedNearest
+          ? allStationUsers.filter((user) => normalizeStationName(user.station || "") === normalizedNearest)
+          : [];
+
+        if (!stationUsers.length && typeof latitude === "number" && typeof longitude === "number") {
+          const nearestStationMasterStation = findNearestStationFromNames(
+            allStationUsers.map((user) => user.station || "").filter(Boolean),
+            latitude,
+            longitude,
+            allStations
+          );
+
+          if (nearestStationMasterStation) {
+            const normalizedNearestStationMaster = normalizeStationName(nearestStationMasterStation.name);
+            stationUsers = allStationUsers.filter(
+              (user) => normalizeStationName(user.station || "") === normalizedNearestStationMaster
+            );
+          }
+        }
+
+        if (stationUsers.length) {
+          stationUsers.forEach((user) => assignedUsernames.add(user.username));
+        } else if (allStationUsers.length) {
+          assignedUsernames.add(allStationUsers[0].username);
+        }
         continue;
       }
 
@@ -183,6 +232,7 @@ export async function POST(request: Request) {
         to: data.trainDetails?.to || "",
       },
       location: data.location || null,
+      nearestStation,
       status: "pending",
       priority: isEmergencyCategory || data.complaintMode === "emergency" ? "high" : "normal",
       assignedTo,
@@ -199,6 +249,7 @@ export async function POST(request: Request) {
       assignedTo,
       assignedUsernames: Array.from(assignedUsernames),
       assignedStaffUsername,
+      nearestStation,
     });
   } catch {
     return NextResponse.json({ error: "Unable to register complaint." }, { status: 500 });

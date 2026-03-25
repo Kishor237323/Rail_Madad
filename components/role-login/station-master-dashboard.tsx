@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, Flame, HeartPulse, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type ComplaintStatus = "pending" | "in-progress" | "resolved";
@@ -47,6 +48,14 @@ export function StationMasterDashboard({ username }: { username: string }) {
   const [stats, setStats] = useState({ total: 0, pending: 0, inProgress: 0, resolved: 0 });
   const [complaints, setComplaints] = useState<StationComplaint[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [updatingComplaintId, setUpdatingComplaintId] = useState<string | null>(null);
+
+  const getStatsFromComplaints = (items: StationComplaint[]) => ({
+    total: items.length,
+    pending: items.filter((item) => item.status === "pending").length,
+    inProgress: items.filter((item) => item.status === "in-progress").length,
+    resolved: items.filter((item) => item.status === "resolved").length,
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -61,13 +70,9 @@ export function StationMasterDashboard({ username }: { username: string }) {
           return;
         }
 
-        setStats({
-          total: Number(data.total || 0),
-          pending: Number(data.pending || 0),
-          inProgress: Number(data.inProgress || 0),
-          resolved: Number(data.resolved || 0),
-        });
-        setComplaints(Array.isArray(data.complaints) ? data.complaints : []);
+        const list = Array.isArray(data.complaints) ? data.complaints : [];
+        setComplaints(list);
+        setStats(getStatsFromComplaints(list));
       } catch {
         setStats({ total: 0, pending: 0, inProgress: 0, resolved: 0 });
         setComplaints([]);
@@ -99,6 +104,39 @@ export function StationMasterDashboard({ username }: { username: string }) {
 
     loadProfile();
   }, [username]);
+
+  const updateStatus = async (complaintId: string, status: ComplaintStatus) => {
+    if (updatingComplaintId) return;
+
+    const previous = complaints;
+    const next = complaints.map((item) =>
+      item.complaintId === complaintId ? { ...item, status } : item
+    );
+
+    setUpdatingComplaintId(complaintId);
+    setComplaints(next);
+    setStats(getStatsFromComplaints(next));
+
+    try {
+      const response = await fetch(`/api/station-master/complaints/${encodeURIComponent(complaintId)}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        setComplaints(previous);
+        setStats(getStatsFromComplaints(previous));
+      }
+    } catch {
+      setComplaints(previous);
+      setStats(getStatsFromComplaints(previous));
+    } finally {
+      setUpdatingComplaintId(null);
+    }
+  };
 
   const emergencyAlerts = useMemo(() => stats.pending + stats.inProgress, [stats.inProgress, stats.pending]);
 
@@ -201,10 +239,20 @@ export function StationMasterDashboard({ username }: { username: string }) {
                       Resolved
                     </p>
                   ) : (
-                    <p className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                      Active emergency
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        Active emergency
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => updateStatus(complaint.complaintId, "resolved")}
+                        disabled={updatingComplaintId === complaint.complaintId}
+                      >
+                        Resolved
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>

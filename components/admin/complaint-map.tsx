@@ -100,7 +100,7 @@ export function ComplaintMap({ complaints }: ComplaintMapProps) {
               ">${complaint.status}</span>
             </div>
             <p style="font-size: 12px; color: #334155;">${complaint.description.substring(0, 100)}...</p>
-            ${complaint.trainNumber ? `<p style="font-size: 11px; color: #64748b; margin-top: 4px;">Train: ${complaint.trainNumber}</p>` : ''}
+            ${complaint.location?.trainNumber ? `<p style="font-size: 11px; color: #64748b; margin-top: 4px;">Train: ${complaint.location.trainNumber}</p>` : ''}
           </div>
         `);
       }
