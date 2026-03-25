@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -40,10 +40,30 @@ function TrackPageContent() {
   const [complaintId, setComplaintId] = useState(initialId);
   const [searchedId, setSearchedId] = useState(initialId);
   const [isSearching, setIsSearching] = useState(false);
-  const [complaint, setComplaint] = useState<Complaint | null>(
-    initialId ? mockComplaints.find((c) => c.id === initialId) || null : null
-  );
+  const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [notFound, setNotFound] = useState(false);
+
+  const fetchComplaintById = async (id: string): Promise<Complaint | null> => {
+    const response = await fetch(`/api/complaints/track?id=${encodeURIComponent(id)}`);
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      complaint?: Omit<Complaint, "timestamp" | "resolvedAt"> & { timestamp: string; resolvedAt?: string };
+    };
+
+    if (!data.complaint) {
+      return null;
+    }
+
+    return {
+      ...data.complaint,
+      timestamp: new Date(data.complaint.timestamp),
+      resolvedAt: data.complaint.resolvedAt ? new Date(data.complaint.resolvedAt) : undefined,
+    };
+  };
 
   const handleSearch = async () => {
     if (!complaintId.trim()) return;
@@ -52,12 +72,11 @@ function TrackPageContent() {
     setNotFound(false);
     setSearchedId(complaintId);
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    const found = mockComplaints.find(
-      (c) => c.id.toLowerCase() === complaintId.toLowerCase()
-    );
+    let found = await fetchComplaintById(complaintId);
+
+    if (!found) {
+      found = mockComplaints.find((c) => c.id.toLowerCase() === complaintId.toLowerCase()) || null;
+    }
     
     if (found) {
       setComplaint(found);
@@ -69,6 +88,28 @@ function TrackPageContent() {
     
     setIsSearching(false);
   };
+
+  useEffect(() => {
+    if (!initialId) {
+      return;
+    }
+
+    setComplaintId(initialId);
+    setSearchedId(initialId);
+
+    const loadInitial = async () => {
+      setIsSearching(true);
+      const found =
+        (await fetchComplaintById(initialId)) ||
+        mockComplaints.find((c) => c.id.toLowerCase() === initialId.toLowerCase()) ||
+        null;
+      setComplaint(found);
+      setNotFound(!found);
+      setIsSearching(false);
+    };
+
+    loadInitial();
+  }, [initialId]);
 
   const StatusIcon = complaint ? statusConfig[complaint.status].icon : Clock;
 

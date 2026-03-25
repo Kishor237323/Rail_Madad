@@ -1,178 +1,382 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
-import { 
-  Upload, 
-  Camera, 
-  MapPin, 
-  AlertTriangle, 
+import { useRef, useState } from "react";
+import {
+  AlertTriangle,
+  BadgeCheck,
+  Check,
   CheckCircle2,
-  X,
-  Sparkles,
-  Train,
+  FileText,
+  ImagePlus,
+  Loader2,
+  Lock,
+  MapPin,
+  Navigation,
   Phone,
-  User,
-  FileText
+  ShieldAlert,
+  ShieldCheck,
+  Siren,
+  Sparkles,
+  Tag,
+  Ticket,
+  Train,
+  UploadCloud,
 } from "lucide-react";
-import { CATEGORY_LABELS, type ComplaintCategory } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
-interface AIClassificationResult {
-  category: ComplaintCategory;
-  confidence: number;
-  detectedIssues: string[];
-}
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
+type TrainDetails = {
+  trainName: string;
+  trainNumber: string;
+  coach: string;
+  seat: string;
+  from: string;
+  to: string;
+};
+
+type ComplaintMode = "train" | "emergency";
+
+const DEMO_OTP = "123456";
+const DESCRIPTION_LIMIT = 300;
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
+const EMERGENCY_COMPLAINT_CATEGORIES = [
+  "Medical",
+  "Fire",
+  "Security",
+  "Crowd",
+];
+
+const MOCK_PNR_DB: Record<string, TrainDetails> = {
+  "2418567391": {
+    trainName: "Vande Bharat Express",
+    trainNumber: "22435",
+    coach: "C3",
+    seat: "42",
+    from: "New Delhi",
+    to: "Varanasi",
+  },
+  "5123467890": {
+    trainName: "Rajdhani Express",
+    trainNumber: "12951",
+    coach: "B2",
+    seat: "19",
+    from: "Mumbai Central",
+    to: "New Delhi",
+  },
+};
 
 export function ComplaintForm() {
-  const [step, setStep] = useState(1);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpError, setOtpError] = useState("");
+
+  const [pnr, setPnr] = useState("");
+  const [complaintMode, setComplaintMode] = useState<ComplaintMode>("train");
+  const [isFetchingPnr, setIsFetchingPnr] = useState(false);
+  const [pnrError, setPnrError] = useState("");
+  const [trainDetails, setTrainDetails] = useState<TrainDetails | null>(null);
+  const [category, setCategory] = useState("");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [imageError, setImageError] = useState("");
+
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = useState("");
+  const [isCapturingLocation, setIsCapturingLocation] = useState(false);
+
+  const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [complaintId, setComplaintId] = useState("");
-  
-  // Form state
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<AIClassificationResult | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<ComplaintCategory | "">("");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState("");
-  const [trainNumber, setTrainNumber] = useState("");
-  const [coachNumber, setCoachNumber] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [pnr, setPnr] = useState("");
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [crn, setCrn] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
-  const handleImageUpload = useCallback((file: File) => {
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-    
-    // Simulate AI analysis
-    setIsAnalyzing(true);
-    setTimeout(() => {
-      const categories: ComplaintCategory[] = ["cleanliness", "infrastructure", "electrical", "overcrowding"];
-      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-      const confidence = 0.75 + Math.random() * 0.2;
-      
-      const issuesByCategory: Record<string, string[]> = {
-        cleanliness: ["Unclean floor surface detected", "Visible waste materials", "Stains on seats"],
-        infrastructure: ["Damaged seat cushion", "Broken window latch", "Torn curtain"],
-        electrical: ["Non-functional light fixture", "Damaged charging point", "Fan not working"],
-        overcrowding: ["Excessive passengers in coach", "Blocked emergency exit", "Unsafe standing conditions"],
-      };
-      
-      setAiResult({
-        category: randomCategory,
-        confidence,
-        detectedIssues: issuesByCategory[randomCategory] || ["Issue detected"],
-      });
-      setSelectedCategory(randomCategory);
-      setIsAnalyzing(false);
-    }, 2000);
-  }, []);
+  const requiresOtp = complaintMode === "train";
+  const isLocked = requiresOtp && !otpVerified;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
+  const isContextReady = !!trainDetails;
+
+  const canSubmit =
+    (!requiresOtp || otpVerified) &&
+    (complaintMode === "train" || !!category) &&
+    isContextReady &&
+    (complaintMode === "emergency" || !!imageFile);
+
+  const categoryOptions = EMERGENCY_COMPLAINT_CATEGORIES;
+
+  const getModeLabel = (mode: ComplaintMode) => {
+    if (mode === "train") return "Train Complaint";
+    return "Emergency";
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      handleImageUpload(file);
-    }
-  }, [handleImageUpload]);
+  const generateComplaintId = () => {
+    const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
+    return `RM${randomDigits}`;
+  };
 
-  const getLocation = () => {
-    if ("geolocation" in navigator) {
+  const handleSendOtp = async () => {
+    setOtpError("");
+
+    if (!/^\d{10}$/.test(phone)) {
+      setOtpError("Please enter a valid 10-digit phone number.");
+      return;
+    }
+
+    setIsSendingOtp(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setOtpSent(true);
+    setOtpVerified(false);
+    setIsSendingOtp(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    setOtpError("");
+
+    if (!/^\d{6}$/.test(otp)) {
+      setOtpError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    await new Promise((resolve) => setTimeout(resolve, 900));
+
+    if (otp === DEMO_OTP) {
+      setOtpVerified(true);
+      setOtpError("");
+    } else {
+      setOtpVerified(false);
+      setOtpError("Invalid OTP. Please try again.");
+    }
+
+    setIsVerifyingOtp(false);
+  };
+
+  const handleFetchPnr = async () => {
+    setPnrError("");
+    setTrainDetails(null);
+
+    if (!/^\d{10}$/.test(pnr)) {
+      setPnrError("Invalid PNR. Please enter a 10-digit number.");
+      return;
+    }
+
+    setIsFetchingPnr(true);
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    const details = MOCK_PNR_DB[pnr];
+    if (!details) {
+      setPnrError("PNR not found. Please check and try again.");
+    } else {
+      setTrainDetails(details);
+    }
+
+    setIsFetchingPnr(false);
+  };
+
+  const onFileSelected = (file?: File) => {
+    setImageError("");
+
+    if (!file || !file.type.startsWith("image/")) {
+      setImageError("Please upload a valid image file.");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setImageError("File too large. Please upload an image up to 5 MB.");
+      return;
+    }
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setImageFile(file);
+    setImagePreview(objectUrl);
+  };
+
+  const captureCurrentLocation = async () => {
+    setLocationError("");
+
+    if (!("geolocation" in navigator)) {
+      setLocationError("Geolocation is not supported on this device.");
+      return null;
+    }
+
+    setIsCapturingLocation(true);
+
+    const capturedLocation = await new Promise<{ latitude: number; longitude: number } | null>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          setLocationError("");
+          const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          setLocation(coords);
+          resolve(coords);
         },
-        (error) => {
-          setLocationError("Unable to get location. Please enter train details manually.");
+        () => {
+          setLocation(null);
+          setLocationError("Location permission denied. Please allow location access to submit.");
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
         }
       );
-    } else {
-      setLocationError("Geolocation is not supported by your browser.");
-    }
+    });
+
+    setIsCapturingLocation(false);
+    return capturedLocation;
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    const newId = `RM${Date.now().toString(36).toUpperCase()}`;
-    setComplaintId(newId);
-    setSubmitted(true);
-    setIsSubmitting(false);
+    setSubmitError("");
+
+    if (requiresOtp && !otpVerified) {
+      setSubmitError("Please verify OTP before submitting.");
+      return;
+    }
+
+    if (complaintMode === "train" && !imageFile) {
+      setSubmitError("Please upload an image as evidence.");
+      return;
+    }
+
+    if (complaintMode === "emergency" && !category) {
+      setSubmitError("Please select an emergency category.");
+      return;
+    }
+
+    if (!trainDetails) {
+      setSubmitError("Please fetch valid PNR details before submitting.");
+      return;
+    }
+
+    if (!canSubmit) {
+      return;
+    }
+
+    const capturedLocation = await captureCurrentLocation();
+    if (!capturedLocation) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Step 1: Generate complaint ID and upload image if present
+      let imagePath: string | undefined;
+      const complaintId = `RM${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+      if (imageFile && complaintMode === "train") {
+        const formData = new FormData();
+        formData.append("complaintId", complaintId);
+        formData.append("image", imageFile);
+
+        const uploadResponse = await fetch("/api/complaints/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const uploadData = (await uploadResponse.json()) as { error?: string; imagePath?: string };
+
+        if (!uploadResponse.ok) {
+          setSubmitError(uploadData.error ?? "Failed to upload image. Please try again.");
+          return;
+        }
+
+        imagePath = uploadData.imagePath;
+      }
+
+      // Step 2: Register complaint with image path
+      const response = await fetch("/api/complaints/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          complaintMode,
+          pnr,
+          category: complaintMode === "emergency" ? category : undefined,
+          description,
+          trainDetails,
+          location: capturedLocation,
+          imagePath,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string; complaintId?: string };
+
+      if (!response.ok) {
+        setSubmitError(data.error ?? "Unable to register complaint.");
+        return;
+      }
+
+      setCrn(data.complaintId ?? complaintId);
+      setSubmitted(true);
+    } catch {
+      setSubmitError("Unable to register complaint right now. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const resetForm = () => {
-    setStep(1);
-    setImageFile(null);
-    setImagePreview(null);
-    setAiResult(null);
-    setSelectedCategory("");
-    setDescription("");
-    setLocation(null);
-    setTrainNumber("");
-    setCoachNumber("");
-    setName("");
-    setPhone("");
-    setPnr("");
-    setSubmitted(false);
-    setComplaintId("");
-  };
+  const complaintModes: { value: ComplaintMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { value: "train", label: "Train Complaint", icon: Train },
+    { value: "emergency", label: "Emergency", icon: Siren },
+  ];
 
   if (submitted) {
     return (
-      <Card className="max-w-2xl mx-auto border-success/30 bg-success/5">
-        <CardContent className="pt-8 pb-8">
-          <div className="text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-4">
-              <CheckCircle2 className="h-8 w-8 text-success" />
+      <Card className="mx-auto w-full max-w-3xl rounded-2xl border border-green-200 bg-white shadow-xl shadow-green-100/40">
+        <CardContent className="space-y-6 p-5 sm:p-8">
+          <div className="rounded-2xl border border-green-200 bg-green-50/80 p-6 text-center shadow-sm">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+              <BadgeCheck className="h-7 w-7 text-green-700" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Complaint Submitted Successfully</h2>
-            <p className="text-muted-foreground mb-6">Your complaint has been registered and will be addressed shortly.</p>
-            
-            <div className="bg-card border border-border rounded-lg p-4 mb-6">
-              <p className="text-sm text-muted-foreground mb-1">Your Complaint ID</p>
-              <p className="text-2xl font-mono font-bold text-primary">{complaintId}</p>
-              <p className="text-xs text-muted-foreground mt-2">Save this ID to track your complaint status</p>
+            <h2 className="text-2xl font-semibold text-green-800">✅ Complaint submitted successfully</h2>
+            <p className="mt-3 text-lg font-bold tracking-wide text-slate-900">Complaint ID: {crn}</p>
+            <p className="mt-2 text-sm text-slate-700">
+              Your complaint has been forwarded to the concerned railway staff.
+            </p>
+            <p className="text-sm text-slate-600">Updates will be shared via SMS.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex items-center gap-2 text-slate-900">
+              <Sparkles className="h-4 w-4 text-blue-700" />
+              <h3 className="font-medium">Status Simulation</h3>
             </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={resetForm} variant="outline">
-                Submit Another Complaint
-              </Button>
-              <Button asChild>
-                <a href={`/track?id=${complaintId}`}>Track Complaint</a>
-              </Button>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-center">
+                <p className="text-xs font-medium text-blue-700">Assigned</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">Completed</p>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center">
+                <p className="text-xs font-medium text-amber-700">In Progress</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">Queued</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
+                <p className="text-xs font-medium text-slate-500">Resolved</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">Pending</p>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -181,375 +385,435 @@ export function ComplaintForm() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center">
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-colors",
-                  step >= s
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
-                {s}
-              </div>
-              {s < 3 && (
-                <div
-                  className={cn(
-                    "w-16 sm:w-24 h-1 mx-2",
-                    step > s ? "bg-primary" : "bg-muted"
-                  )}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-2 px-1">
-          <span className="text-xs text-muted-foreground">Upload Image</span>
-          <span className="text-xs text-muted-foreground">Details</span>
-          <span className="text-xs text-muted-foreground">Contact</span>
-        </div>
-      </div>
+    <Card className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
+      <CardHeader className="space-y-2 border-b border-slate-100 pb-6">
+        <CardTitle className="text-center text-2xl font-semibold text-slate-900 sm:text-3xl">
+          🚆 Rail Madad – Register Complaint
+        </CardTitle>
+        <p className="text-center text-sm text-slate-500">
+          Secure grievance submission with OTP verification and PNR-linked train details.
+        </p>
+      </CardHeader>
 
-      {/* Step 1: Image Upload */}
-      {step === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5 text-primary" />
-              Upload Complaint Image
-            </CardTitle>
-            <CardDescription>
-              Take a photo or upload an image of the issue. Our AI will automatically analyze and categorize it.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {!imagePreview ? (
-              <div
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
-              >
-                <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-foreground font-medium mb-1">Drop an image here or click to upload</p>
-                <p className="text-sm text-muted-foreground">Supports JPG, PNG, WEBP up to 10MB</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Uploaded complaint"
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                      setAiResult(null);
-                      setSelectedCategory("");
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+      <CardContent className="space-y-6 p-4 sm:p-6">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 sm:p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-blue-700" />
+            <h3 className="font-medium text-slate-900">Complaint Type</h3>
+          </div>
 
-                {isAnalyzing ? (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <Spinner className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-foreground">Analyzing image with AI...</p>
-                        <p className="text-sm text-muted-foreground">Detecting issues and categorizing complaint</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : aiResult && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <Sparkles className="h-5 w-5 text-primary mt-0.5" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-medium text-foreground">AI Analysis Complete</p>
-                          <Badge variant="secondary">
-                            {Math.round(aiResult.confidence * 100)}% confidence
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Detected category: <span className="font-medium text-foreground">{CATEGORY_LABELS[aiResult.category]}</span>
-                        </p>
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium text-muted-foreground">Detected Issues:</p>
-                          <ul className="text-sm text-foreground space-y-1">
-                            {aiResult.detectedIssues.map((issue, i) => (
-                              <li key={i} className="flex items-center gap-2">
-                                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                {issue}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="grid gap-2 sm:grid-cols-2">
+            {complaintModes.map((mode) => {
+              const Icon = mode.icon;
+              const isActive = complaintMode === mode.value;
 
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" disabled>
-                Back
-              </Button>
-              <Button
-                onClick={() => setStep(2)}
-                disabled={!imagePreview || isAnalyzing}
-              >
-                Continue
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 2: Complaint Details */}
-      {step === 2 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Complaint Details
-            </CardTitle>
-            <CardDescription>
-              Provide additional details about the issue and your location.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as ComplaintCategory)}>
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {aiResult && selectedCategory === aiResult.category && (
-                <p className="text-xs text-primary flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  AI suggested category
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe the issue in detail..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Location</Label>
-                <Button
+              return (
+                <button
+                  key={mode.value}
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={getLocation}
-                  className="gap-2"
+                  onClick={() => {
+                    setComplaintMode(mode.value);
+                    setSubmitError("");
+                    setPnrError("");
+                    setCategory("");
+                    if (mode.value !== "train") {
+                      setPnr("");
+                      setTrainDetails(null);
+                    }
+                  }}
+                  className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-all ${
+                    isActive
+                      ? "border-blue-300 bg-blue-50 text-blue-800"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  }`}
                 >
-                  <MapPin className="h-4 w-4" />
-                  Get Current Location
-                </Button>
-              </div>
-              
-              {location && (
-                <div className="bg-success/10 border border-success/20 rounded-lg p-3">
-                  <p className="text-sm text-success flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Location captured: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-                  </p>
-                </div>
-              )}
-              
-              {locationError && (
-                <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
-                  <p className="text-sm text-warning-foreground flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    {locationError}
-                  </p>
-                </div>
-              )}
+                  <span className="inline-flex items-center gap-2 text-sm font-medium">
+                    <Icon className="h-4 w-4" />
+                    {mode.label}
+                  </span>
+                  {isActive ? <Check className="h-4 w-4" /> : null}
+                </button>
+              );
+            })}
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="train">Train Number</Label>
-                  <div className="relative">
-                    <Train className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="train"
-                      placeholder="e.g., 12301"
-                      value={trainNumber}
-                      onChange={(e) => setTrainNumber(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="coach">Coach Number</Label>
-                  <Input
-                    id="coach"
-                    placeholder="e.g., S5"
-                    value={coachNumber}
-                    onChange={(e) => setCoachNumber(e.target.value)}
-                  />
-                </div>
+          {complaintMode === "emergency" ? (
+            <div className="mt-3 space-y-3">
+              <p className="rounded-xl border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                Emergency complaints are prioritized and routed immediately.
+              </p>
+
+              <div className="rounded-xl border border-red-200 bg-red-50/60 p-3 text-xs text-red-800">
+                <ul className="list-disc space-y-1 pl-4">
+                  <li>Train Control Office and on-board staff (TTE / Guard) are alerted immediately.</li>
+                  <li>Coach attendant will reach your seat shortly.</li>
+                  <li>First aid will be provided onboard.</li>
+                  <li>Medical assistance will be arranged at the next major station.</li>
+                </ul>
               </div>
             </div>
+          ) : null}
+        </section>
 
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Back
-              </Button>
-              <Button
-                onClick={() => setStep(3)}
-                disabled={!selectedCategory}
-              >
-                Continue
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 3: Contact Information */}
-      {step === 3 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              Contact Information
-            </CardTitle>
-            <CardDescription>
-              Provide your contact details for follow-up communication.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="name"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        {requiresOtp ? (
+          <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 shadow-sm transition-all duration-300 sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Phone className="h-4 w-4 text-blue-700" />
+              <h3 className="font-medium text-slate-900">Phone Number + OTP Verification</h3>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <div>
+                <Label htmlFor="phone" className="mb-2 block text-slate-700">
+                  Phone Number
+                </Label>
                 <Input
                   id="phone"
-                  placeholder="Enter 10-digit mobile number"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="Enter 10-digit phone number"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="pl-10"
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  className="rounded-xl bg-white"
                 />
               </div>
+              <Button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={isSendingOtp}
+                className="mt-auto rounded-xl bg-blue-700 hover:bg-blue-800"
+              >
+                {isSendingOtp ? <Spinner className="mr-2" /> : null}
+                Send OTP
+              </Button>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="pnr">PNR Number (Optional)</Label>
-              <Input
-                id="pnr"
-                placeholder="Enter 10-digit PNR"
-                value={pnr}
-                onChange={(e) => setPnr(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Providing PNR helps us verify your journey details
+            {otpSent ? (
+              <div className="mt-4 space-y-3 rounded-xl border border-blue-100 bg-blue-50/80 p-4">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <div>
+                    <Label htmlFor="otp" className="mb-2 block text-slate-700">
+                      Enter OTP
+                    </Label>
+                    <Input
+                      id="otp"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="Enter 6-digit OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      className="rounded-xl bg-white"
+                    />
+                    <p className="mt-2 text-xs font-medium text-blue-700">Demo OTP: 123456</p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={isVerifyingOtp}
+                    className="mt-auto rounded-xl"
+                  >
+                    {isVerifyingOtp ? <Spinner className="mr-2" /> : null}
+                    Verify OTP
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {otpVerified ? <p className="mt-3 text-sm font-medium text-green-600">✅ Verified</p> : null}
+            {otpError ? <p className="mt-2 text-sm text-red-600">{otpError}</p> : null}
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm sm:p-5">
+            <p className="text-sm font-medium text-amber-800">Emergency mode: phone number and OTP are not required.</p>
+          </section>
+        )}
+
+        <div
+          className={`space-y-6 transition-all duration-300 ${isLocked ? "pointer-events-none opacity-50" : "opacity-100"}`}
+          aria-disabled={isLocked}
+        >
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Ticket className="h-4 w-4 text-blue-700" />
+              <h3 className="font-medium text-slate-900">PNR Input</h3>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <div>
+                <Label htmlFor="pnr" className="mb-2 block text-slate-700">
+                  Enter PNR Number
+                </Label>
+                <Input
+                  id="pnr"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="Enter 10-digit PNR Number"
+                  value={pnr}
+                  onChange={(e) => setPnr(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  className="rounded-xl"
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={handleFetchPnr}
+                disabled={isFetchingPnr}
+                className="mt-auto rounded-xl"
+              >
+                {isFetchingPnr ? <Spinner className="mr-2" /> : null}
+                Fetch Details
+              </Button>
+            </div>
+
+            {isFetchingPnr ? (
+              <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-800">
+                <p className="flex items-center gap-2">
+                  <Spinner className="h-4 w-4" />
+                  Fetching train details...
+                </p>
+              </div>
+            ) : null}
+
+            {pnrError ? <p className="mt-2 text-sm text-red-600">{pnrError}</p> : null}
+
+            {trainDetails ? (
+              <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-700 shadow-sm">
+                <div className="mb-3 flex items-center gap-2 font-medium text-slate-900">
+                  <Train className="h-4 w-4 text-blue-700" />
+                  Train Journey Details
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <p>
+                    <span className="font-medium">Train Name:</span> {trainDetails.trainName}
+                  </p>
+                  <p>
+                    <span className="font-medium">Train No:</span> {trainDetails.trainNumber}
+                  </p>
+                  <p>
+                    <span className="font-medium">Coach:</span> {trainDetails.coach}
+                  </p>
+                  <p>
+                    <span className="font-medium">Seat:</span> {trainDetails.seat}
+                  </p>
+                  <p className="sm:col-span-2">
+                    <span className="font-medium">Journey Route:</span> {trainDetails.from} → {trainDetails.to}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </section>
+
+          {complaintMode === "emergency" ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <Tag className="h-4 w-4 text-blue-700" />
+                <h3 className="font-medium text-slate-900">Emergency Category</h3>
+              </div>
+
+              <Label htmlFor="complaint-category" className="mb-2 block text-slate-700">
+                Select Emergency Category
+              </Label>
+              <select
+                id="complaint-category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Select emergency category</option>
+                {categoryOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </section>
+          ) : null}
+
+          {complaintMode === "train" ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <ImagePlus className="h-4 w-4 text-blue-700" />
+                <h3 className="font-medium text-slate-900">Image Upload</h3>
+              </div>
+
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                onFileSelected(e.dataTransfer.files?.[0]);
+              }}
+              className={`rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-slate-300 bg-slate-50"}`}
+            >
+              <UploadCloud className="mx-auto mb-2 h-8 w-8 text-blue-700" />
+              <p className="text-sm text-slate-700">Drag & drop image here</p>
+              <p className="text-xs text-slate-500">or use the buttons below</p>
+              <p className="mt-1 text-xs text-slate-500">Max 5 MB</p>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => uploadInputRef.current?.click()}
+                className="rounded-xl"
+              >
+                Select File
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => cameraInputRef.current?.click()}
+                className="rounded-xl"
+              >
+                Open Camera
+              </Button>
+            </div>
+
+            <input
+              ref={uploadInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => onFileSelected(e.target.files?.[0])}
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => onFileSelected(e.target.files?.[0])}
+            />
+
+            {imageFile ? (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
+                <p className="mb-2 text-sm text-slate-600">
+                  {imageFile.name} ({(imageFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+                <img src={imagePreview} alt="Complaint preview" className="h-48 w-full rounded-xl object-cover" />
+              </div>
+            ) : null}
+
+              {imageError ? <p className="mt-3 text-sm text-red-600">{imageError}</p> : null}
+            </section>
+          ) : null}
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-blue-700" />
+              <h3 className="font-medium text-slate-900">Location Capture</h3>
+            </div>
+
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm text-slate-700">
+              <p className="font-medium">Helps in faster resolution</p>
+              <p className="mt-1">
+                {complaintMode === "emergency"
+                  ? "Location will be captured automatically during emergency complaint submission."
+                  : "Location can be captured now or automatically during submission."}
               </p>
             </div>
 
-            {/* Summary */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <h4 className="font-medium text-foreground">Complaint Summary</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-muted-foreground">Category:</div>
-                <div className="text-foreground">{selectedCategory && CATEGORY_LABELS[selectedCategory]}</div>
-                {trainNumber && (
-                  <>
-                    <div className="text-muted-foreground">Train:</div>
-                    <div className="text-foreground">{trainNumber}</div>
-                  </>
-                )}
-                {coachNumber && (
-                  <>
-                    <div className="text-muted-foreground">Coach:</div>
-                    <div className="text-foreground">{coachNumber}</div>
-                  </>
-                )}
-              </div>
-              {aiResult && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">AI Confidence:</span>
-                  <span className="text-foreground">{Math.round(aiResult.confidence * 100)}%</span>
-                </div>
-              )}
+            {complaintMode === "train" ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={captureCurrentLocation}
+                disabled={isCapturingLocation}
+                className="mt-3 rounded-xl"
+              >
+                {isCapturingLocation ? <Spinner className="mr-2" /> : <Navigation className="mr-2 h-4 w-4" />}
+                Get Location
+              </Button>
+            ) : null}
+
+            {isCapturingLocation ? (
+              <p className="mt-3 flex items-center gap-2 text-sm text-blue-700">
+                <Spinner className="h-4 w-4" />
+                Capturing your current location...
+              </p>
+            ) : null}
+            {location ? (
+              <p className="mt-3 text-sm text-green-700">
+                Latitude: {location.latitude.toFixed(6)} | Longitude: {location.longitude.toFixed(6)}
+              </p>
+            ) : null}
+            {locationError ? <p className="mt-3 text-sm text-red-600">{locationError}</p> : null}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-700" />
+              <h3 className="font-medium text-slate-900">Description (Optional)</h3>
             </div>
 
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={() => setStep(2)}>
-                Back
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!name || !phone || isSubmitting}
-                className="gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Spinner className="h-4 w-4" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Complaint"
-                )}
-              </Button>
+            <Textarea
+              placeholder="Describe the issue clearly (optional)"
+              maxLength={DESCRIPTION_LIMIT}
+              value={description}
+              onChange={(e) => setDescription(e.target.value.slice(0, DESCRIPTION_LIMIT))}
+              className="min-h-28 rounded-xl"
+            />
+            <p className="mt-2 text-xs text-slate-500">Provide clear details for faster resolution.</p>
+            <p className="mt-1 text-right text-xs text-slate-500">
+              {description.length}/{DESCRIPTION_LIMIT}
+            </p>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-blue-700" />
+              <h3 className="font-medium text-slate-900">Submit</h3>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+
+            <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
+              <p className="font-medium text-slate-800">Selected Mode: {getModeLabel(complaintMode)}</p>
+              <p className="mt-1">
+                {complaintMode === "emergency"
+                  ? "Required: PNR fetched and emergency category selected. Location is captured automatically."
+                  : "Required: OTP verified, PNR fetched, and image uploaded. AI classifies category internally."}
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit || isSubmitting || isCapturingLocation}
+              className="w-full rounded-xl bg-blue-700 py-6 text-base hover:bg-blue-800"
+            >
+              {isSubmitting || isCapturingLocation ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isCapturingLocation ? "Capturing location..." : "Submitting..."}
+                </>
+              ) : (
+                "Register Complaint"
+              )}
+            </Button>
+
+            {!canSubmit ? (
+              <div className="mt-3 flex items-start gap-2 text-xs text-slate-500">
+                <Lock className="mt-0.5 h-3.5 w-3.5" />
+                <p>
+                  {complaintMode === "emergency"
+                    ? "Submit is enabled only after PNR fetch success and emergency category selection."
+                    : "Submit is enabled only after OTP verification, PNR fetch success, and image upload."}
+                </p>
+              </div>
+            ) : null}
+
+            {submitError ? (
+              <p className="mt-3 flex items-center gap-2 text-sm text-red-700">
+                <ShieldAlert className="h-4 w-4" />
+                {submitError}
+              </p>
+            ) : null}
+          </section>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

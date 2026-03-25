@@ -1,132 +1,139 @@
 "use client";
 
-import { StatsCards } from "@/components/admin/stats-cards";
-import { ComplaintsChart, CategoryChart } from "@/components/admin/charts";
-import { ComplaintsTable } from "@/components/admin/complaints-table";
-import { mockComplaints, getComplaintStats, getTimeSeriesData, getCategoryDistribution } from "@/lib/mock-data";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, TrendingUp, Users, Zap, MapPin } from "lucide-react";
-import dynamic from "next/dynamic";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, LockKeyhole, ShieldCheck, Train } from "lucide-react";
 
-// Dynamically import map to avoid SSR issues
-const ComplaintMap = dynamic(() => import("@/components/admin/complaint-map").then(mod => mod.ComplaintMap), {
-  ssr: false,
-  loading: () => (
-    <Card className="h-[400px] flex items-center justify-center">
-      <div className="text-muted-foreground">Loading map...</div>
-    </Card>
-  ),
-});
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
-export default function AdminDashboard() {
-  const stats = getComplaintStats();
-  const timeSeriesData = getTimeSeriesData();
-  const categoryData = getCategoryDistribution();
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter username and password.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          password,
+        }),
+      });
+
+      const data = (await response.json()) as { error?: string; redirectTo?: string };
+
+      if (!response.ok) {
+        setError(data.error ?? "Invalid credentials");
+        return;
+      }
+
+      const nextPath = searchParams.get("next");
+      router.push(nextPath || data.redirectTo || "/admin/analytics");
+    } catch {
+      setError("Unable to login right now. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard Overview</h1>
-          <p className="text-muted-foreground mt-1">
-            Monitor and manage railway complaints in real-time
-          </p>
-        </div>
-        <Badge variant="outline" className="flex gap-2 py-2 px-4 bg-success/10 border-success/30">
-          <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-          <span className="text-success">Live</span>
-        </Badge>
-      </div>
+    <div className="relative flex min-h-screen items-center justify-center bg-linear-to-b from-slate-50 to-white p-4">
+      <Button
+        asChild
+        variant="ghost"
+        className="absolute left-4 top-4 rounded-xl text-slate-700 hover:bg-slate-100"
+      >
+        <Link href="/">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Link>
+      </Button>
 
-      {/* Stats Cards */}
-      <StatsCards stats={stats} />
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card border-border hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
-                <TrendingUp className="h-6 w-6 text-success" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Resolution Rate</p>
-                <p className="text-2xl font-bold text-foreground">{stats.resolutionRate}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                <Clock className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Response</p>
-                <p className="text-2xl font-bold text-foreground">{stats.avgResponseTime}h</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
-                <Zap className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">AI Accuracy</p>
-                <p className="text-2xl font-bold text-foreground">94%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border hover:shadow-md transition-shadow">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning/10">
-                <Users className="h-6 w-6 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Active Staff</p>
-                <p className="text-2xl font-bold text-foreground">24</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ComplaintsChart data={timeSeriesData} />
-        <CategoryChart data={categoryData} />
-      </div>
-
-      {/* Map Section */}
-      <Card className="border-border">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              Live Complaint Map
-            </CardTitle>
-            <Badge variant="secondary" className="text-xs">
-              {mockComplaints.length} Active Complaints
-            </Badge>
+      <Card className="w-full max-w-md rounded-2xl border-slate-200 shadow-xl shadow-slate-200/60">
+        <CardHeader className="space-y-3 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+            <Train className="h-6 w-6 text-primary" />
           </div>
+          <CardTitle className="text-2xl">🔐 Admin Login – Rail Madad</CardTitle>
+          <CardDescription>
+            Secure access for authorized administrators only.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="h-[400px] rounded-b-lg overflow-hidden">
-            <ComplaintMap complaints={mockComplaints} />
-          </div>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin-username">Username</Label>
+              <Input
+                id="admin-username"
+                type="text"
+                placeholder="Enter admin username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="rounded-xl"
+                autoComplete="username"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="rounded-xl"
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
+              {loading ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <LockKeyhole className="mr-2 h-4 w-4" />
+                  Login
+                </>
+              )}
+            </Button>
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+              <p className="flex items-center gap-2 font-medium text-foreground">
+                <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                Admin-only access
+              </p>
+              <p className="mt-1">No signup or guest access is available.</p>
+            </div>
+          </form>
         </CardContent>
       </Card>
-
-      {/* Complaints Table */}
-      <ComplaintsTable complaints={mockComplaints} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Sparkles, MapPin, Brain, Map, ScanText } from "lucide-react";
+import { Camera, Sparkles, MapPin, Brain, Map } from "lucide-react";
 
 const features = [
   {
@@ -28,11 +28,6 @@ const features = [
     icon: Map,
     title: "Live Complaint Map",
     description: "Interactive map view showing real-time complaint locations and status",
-  },
-  {
-    icon: ScanText,
-    title: "OCR Text Extraction",
-    description: "Automatic text extraction from images for additional context",
   },
 ];
 

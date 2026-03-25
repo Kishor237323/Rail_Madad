@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admin/submit", icon: FileText, label: "Submit Complaint" },
+  { href: "/admin/submit", icon: FileText, label: "Register Complaint" },
   { href: "/admin/complaints", icon: ListTodo, label: "Complaints List" },
   { href: "/admin/map", icon: Map, label: "Map View" },
   { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },

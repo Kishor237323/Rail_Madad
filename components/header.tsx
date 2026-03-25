@@ -9,9 +9,9 @@ import { useState, useEffect } from "react";
 
 const navItems = [
   { href: "/", label: "Home" },
-  { href: "/#submit", label: "Submit Complaint" },
+  { href: "/submit", label: "Register Complaint" },
   { href: "/track", label: "Track Status" },
-  { href: "/admin", label: "Dashboard" },
+  { href: "/admin", label: "Admin Login" },
 ];
 
 export function Header() {
@@ -30,7 +30,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">

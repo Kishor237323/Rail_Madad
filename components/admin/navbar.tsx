@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Search, User, Sun, Moon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 export function AdminNavbar() {
+  const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -25,6 +29,17 @@ export function AdminNavbar() {
   const toggleDarkMode = () => {
     document.documentElement.classList.toggle("dark");
     setDarkMode(!darkMode);
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await fetch("/api/admin/logout", { method: "POST" });
+      router.push("/admin");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -99,7 +114,20 @@ export function AdminNavbar() {
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={handleLogout}
+              disabled={loggingOut}
+            >
+              {loggingOut ? (
+                <span className="inline-flex items-center gap-2">
+                  <Spinner className="h-3.5 w-3.5" />
+                  Signing out...
+                </span>
+              ) : (
+                "Sign out"
+              )}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

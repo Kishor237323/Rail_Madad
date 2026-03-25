@@ -1,19 +1,95 @@
 "use client";
 
-import { Header } from "@/components/header";
+import { useState } from "react";
 import { ComplaintForm } from "@/components/complaint-form";
-import { EmergencyButton } from "@/components/emergency-button";
 import { FeatureCards } from "@/components/feature-cards";
 import { HowItWorks } from "@/components/how-it-works";
-import { Train, ArrowRight, Github, Mail, Shield, FileText } from "lucide-react";
+import { Train, ArrowRight, Github, Mail, Shield, FileText, Menu, X, UserCog, Building2, NotebookPen } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const roleLoginItems = [
+    { href: "/role-login/railway-staff", label: "Railway Staff Login", icon: UserCog },
+    { href: "/role-login/rpf", label: "RPF Login", icon: Shield },
+    { href: "/role-login/station-master", label: "Station Master Login", icon: Building2 },
+    { href: "/role-login/register", label: "📝 Register", icon: NotebookPen },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
+        <div className="container relative mx-auto flex h-16 items-center px-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label="Toggle role login sidebar"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+              <Train className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-lg font-bold text-foreground">Rail Madad AI</span>
+              <span className="text-[10px] text-muted-foreground">Smart Railway Complaints</span>
+            </div>
+          </Link>
+
+          <nav className="ml-auto hidden md:flex items-center gap-1">
+            <Link href="/" className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground">
+              Home
+            </Link>
+            <Link href="/submit" className="px-4 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+              Register Complaint
+            </Link>
+            <Link href="/track" className="px-4 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+              Track Status
+            </Link>
+            <Link href="/admin" className="px-4 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+              Admin Login
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <aside
+        className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-72 border-r border-slate-800 bg-[#111827] p-4 text-white shadow-xl transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/70">Role Logins</h3>
+        <div className="space-y-2">
+          {roleLoginItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/90 transition hover:bg-white/10 hover:text-white"
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </aside>
+
+      {sidebarOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 top-16 z-30 bg-black/40 lg:hidden"
+          aria-label="Close sidebar overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
+
+      <div className={sidebarOpen ? "lg:pl-72" : ""}>
       <main>
         {/* Hero Section with Glassmorphism */}
         <section className="relative overflow-hidden bg-primary py-20 sm:py-28">
@@ -21,7 +97,7 @@ export default function HomePage() {
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')]" />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[#134a6b]" />
+          <div className="absolute inset-0 bg-linear-to-br from-primary via-primary to-[#134a6b]" />
           
           <div className="container mx-auto px-4 relative">
             <div className="max-w-4xl mx-auto text-center">
@@ -43,13 +119,10 @@ export default function HomePage() {
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="gap-2 bg-accent hover:bg-accent/90 text-white px-8 py-6 text-lg" asChild>
-                  <a href="#submit">
+                  <Link href="/submit">
                     Report Complaint
                     <ArrowRight className="h-5 w-5" />
-                  </a>
-                </Button>
-                <Button size="lg" variant="outline" className="bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20 px-8 py-6 text-lg" asChild>
-                  <Link href="/admin">View Dashboard</Link>
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -98,7 +171,7 @@ export default function HomePage() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-                Submit Your Complaint
+                Register Your Complaint
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
                 Upload an image of the issue and let our AI assist in categorizing your complaint
@@ -148,10 +221,10 @@ export default function HomePage() {
                 Join millions of passengers who trust Rail Madad for faster complaint resolution
               </p>
               <Button size="lg" className="gap-2 bg-accent hover:bg-accent/90 text-white px-8 py-6 text-lg" asChild>
-                <a href="#submit">
+                <Link href="/submit">
                   Start Reporting
                   <ArrowRight className="h-5 w-5" />
-                </a>
+                </Link>
               </Button>
             </div>
           </div>
@@ -182,7 +255,7 @@ export default function HomePage() {
               <ul className="space-y-2 text-sm">
                 <li><Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">About</Link></li>
                 <li><Link href="/track" className="text-muted-foreground hover:text-foreground transition-colors">Track Complaint</Link></li>
-                <li><Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link></li>
+                <li><Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin Login</Link></li>
               </ul>
             </div>
             <div>
@@ -214,8 +287,7 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      <EmergencyButton />
+      </div>
     </div>
   );
 }
