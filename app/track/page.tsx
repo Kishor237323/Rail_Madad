@@ -22,7 +22,6 @@ import {
   Sparkles,
   ArrowRight
 } from "lucide-react";
-import { mockComplaints } from "@/lib/mock-data";
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, type Complaint, type ComplaintStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -72,11 +71,7 @@ function TrackPageContent() {
     setNotFound(false);
     setSearchedId(complaintId);
     
-    let found = await fetchComplaintById(complaintId);
-
-    if (!found) {
-      found = mockComplaints.find((c) => c.id.toLowerCase() === complaintId.toLowerCase()) || null;
-    }
+    const found = await fetchComplaintById(complaintId);
     
     if (found) {
       setComplaint(found);
@@ -99,10 +94,7 @@ function TrackPageContent() {
 
     const loadInitial = async () => {
       setIsSearching(true);
-      const found =
-        (await fetchComplaintById(initialId)) ||
-        mockComplaints.find((c) => c.id.toLowerCase() === initialId.toLowerCase()) ||
-        null;
+      const found = await fetchComplaintById(initialId);
       setComplaint(found);
       setNotFound(!found);
       setIsSearching(false);

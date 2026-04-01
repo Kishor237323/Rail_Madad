@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { 
-  LayoutDashboard, 
   ListTodo, 
   Map, 
   BarChart3, 
@@ -17,7 +16,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/complaints", icon: ListTodo, label: "Complaints List" },
   { href: "/admin/map", icon: Map, label: "Map View" },
   { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },

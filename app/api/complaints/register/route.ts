@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getDatabase } from "@/lib/server/db";
+import { classifyTrainComplaintImage } from "@/lib/server/image-classifier";
 import { findNearestStation, findNearestStationFromNames, getStations, normalizeStationName } from "@/lib/server/stations";
 
 const registerComplaintSchema = z.object({
+  complaintId: z.string().optional(),
   complaintMode: z.enum(["train", "emergency"]),
   pnr: z.string().min(1),
   category: z.string().optional(),
@@ -80,7 +82,8 @@ export async function POST(request: Request) {
     const coach = data.trainDetails?.coach?.trim().toUpperCase();
     const trainNumber = data.trainDetails?.trainNumber?.trim();
 
-    const complaintId = generateComplaintId();
+    // Use provided complaintId or generate a new one
+    const complaintId = data.complaintId || generateComplaintId();
     const normalizedEmergencyCategory = (data.category || "").trim();
 
     if (data.complaintMode === "emergency") {
@@ -90,10 +93,42 @@ export async function POST(request: Request) {
       }
     }
 
-    const internalCategory =
+    let internalCategory =
       data.complaintMode === "train"
         ? classifyTrainComplaint(data.description || "")
         : normalizedEmergencyCategory;
+
+    let aiClassification:
+      | {
+          source: "image-model" | "keyword-fallback";
+          modelCategory?: string;
+          confidence?: number | null;
+        }
+      | null = null;
+
+    if (data.complaintMode === "train" && data.imagePath) {
+      console.log(`[Register] Image classification requested for complaint ${complaintId}, imagePath: ${data.imagePath}`);
+      const modelResult = await classifyTrainComplaintImage({
+        imagePath: data.imagePath,
+        description: data.description || "",
+      });
+
+      if (modelResult) {
+        console.log(`[Register] Image classification succeeded: ${modelResult.category} (confidence: ${modelResult.confidence})`);
+        internalCategory = modelResult.category;
+        aiClassification = {
+          source: "image-model",
+          modelCategory: modelResult.rawCategory,
+          confidence: modelResult.confidence,
+        };
+      } else {
+        console.log(`[Register] Image classification failed, using keyword fallback for complaint ${complaintId}`);
+        aiClassification = {
+          source: "keyword-fallback",
+          confidence: null,
+        };
+      }
+    }
 
     const isEmergencyCategory = /medical|fire|security|crowd/i.test(internalCategory);
     const assignedUsernames = new Set<string>();
@@ -223,6 +258,7 @@ export async function POST(request: Request) {
       description: data.description || "",
       imagePath: data.imagePath || null,
       imageUploadedAt: data.imagePath ? new Date() : null,
+      aiClassification,
       train: {
         name: data.trainDetails?.trainName || "",
         number: data.trainDetails?.trainNumber || "",

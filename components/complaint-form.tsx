@@ -383,6 +383,7 @@ export function ComplaintForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          complaintId,
           complaintMode,
           pnr,
           category: complaintMode === "emergency" ? category : undefined,
@@ -549,18 +550,20 @@ export function ComplaintForm() {
                   className="rounded-xl bg-white"
                 />
               </div>
-              <Button
-                type="button"
-                onClick={handleSendOtp}
-                disabled={isSendingOtp}
-                className="mt-auto rounded-xl bg-blue-700 hover:bg-blue-800"
-              >
-                {isSendingOtp ? <Spinner className="mr-2" /> : null}
-                Send OTP
-              </Button>
+              {!otpVerified ? (
+                <Button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={isSendingOtp}
+                  className="mt-auto rounded-xl bg-blue-700 hover:bg-blue-800"
+                >
+                  {isSendingOtp ? <Spinner className="mr-2" /> : null}
+                  Send OTP
+                </Button>
+              ) : null}
             </div>
 
-            {otpSent ? (
+            {otpSent && !otpVerified ? (
               <div className="mt-4 space-y-3 rounded-xl border border-blue-100 bg-blue-50/80 p-4">
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                   <div>

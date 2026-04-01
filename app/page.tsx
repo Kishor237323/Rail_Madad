@@ -114,7 +114,7 @@ export default function HomePage() {
               
               <p className="text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto text-pretty">
                 Upload an image. We detect the issue, location, and priority instantly.
-                Making Indian Railways smarter, one complaint at a time.
+                Making Indian Railways smarter
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
