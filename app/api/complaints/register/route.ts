@@ -9,6 +9,7 @@ const registerComplaintSchema = z.object({
   complaintId: z.string().optional(),
   complaintMode: z.enum(["train", "emergency"]),
   pnr: z.string().min(1),
+  phone: z.string().trim().optional(),
   category: z.string().optional(),
   description: z.string().optional().default(""),
   imagePath: z.string().optional(),
@@ -145,18 +146,19 @@ export async function POST(request: Request) {
       nearestStation = nearest?.name || null;
     }
 
-    // Train complaint routing: assign to the staff mapped to train_number
+    // Train complaint routing: assign to every staff member mapped to the train number.
     if (assignedTo.length === 1 && assignedTo[0] === "Railway Staff") {
-      const trainStaff = trainNumber
+      const trainStaffUsers = trainNumber
         ? await db
             .collection<{ username: string }>("users")
-            .findOne({ role: "railway_staff", train_number: trainNumber })
-        : null;
+            .find({ role: "railway_staff", train_number: trainNumber })
+            .toArray()
+        : [];
 
-      if (trainStaff?.username) {
-        assignedTo = [trainStaff.username];
-        assignedStaffUsername = trainStaff.username;
-        assignedUsernames.add(trainStaff.username);
+      if (trainStaffUsers.length) {
+        assignedTo = trainStaffUsers.map((user) => user.username);
+        assignedStaffUsername = trainStaffUsers[0].username;
+        trainStaffUsers.forEach((user) => assignedUsernames.add(user.username));
       }
     }
 
@@ -254,6 +256,7 @@ export async function POST(request: Request) {
       complaintId,
       complaintMode: data.complaintMode,
       pnr: data.pnr,
+      phone: data.phone || null,
       category: internalCategory,
       description: data.description || "",
       imagePath: data.imagePath || null,

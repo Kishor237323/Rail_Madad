@@ -1,125 +1,135 @@
-🚆 Rail Madad – AI Powered Complaint Management System
+# Rail Madad - Smart Complaint Management System
 
-An intelligent complaint management system designed to enhance the existing Rail Madad platform using AI, image processing, and real-time metadata.
+Rail Madad is a full-stack web application for registering, routing, tracking, and managing railway complaints. It supports passenger complaint submission, image upload, role-based operational dashboards, and admin analytics.
 
-This project enables passengers to submit complaints using images, which are automatically analyzed and categorized using a deep learning model, improving response time and efficiency.
+## Features
 
-🌟 Features
-📸 Image-based Complaint Submission
-🤖 AI Classification (Vision-Language Model)
-📍 Automatic GPS Location Capture
-🕒 Timestamp Extraction (EXIF + fallback)
-🔍 OCR Text Extraction from Images
-🗺️ Live Map Integration (Leaflet.js)
-⚡ Real-time Complaint Processing API
-🧠 Smart Categorization (cleanliness, electrical, infrastructure issues, etc.)
-🧠 How It Works
-User uploads an image complaint
-System extracts:
-Timestamp (EXIF)
-GPS location
-Image is sent to backend API
-AI model classifies complaint category
-OCR extracts text (if any)
-Complaint is stored in database
-Response is returned with:
-Category
-Confidence
-Location
-Image URL
-🏗️ Tech Stack
-Frontend
-Next.js (v0 based UI)
-HTML, CSS, JavaScript
-Leaflet.js (Map integration)
-Backend
-Flask API
-SQLite Database
-AI / ML
- VIT_B_16_ Model
-PyTorch
-Transformers
-Other Tools
-Tesseract OCR
-Geopy (Reverse Geocoding)
-EXIF.js
-📁 Project Structure
+- Passenger complaint registration and tracking
+- Image upload for complaints
+- AI-assisted category mapping for train complaints (external inference endpoint integration)
+- Role-based workflows for Railway Staff, RPF, and Station Master
+- Admin dashboard with analytics and charts
+- Interactive complaint map with Leaflet
+- Secure admin session handling with JWT + cookies
+
+## Current Tech Stack
+
+### Frontend
+
+- Next.js (App Router)
+- React 19 + TypeScript
+- Tailwind CSS v4
+- Radix UI primitives with reusable UI components
+- Recharts for admin analytics graphs
+- Leaflet for map visualization
+
+### Backend
+
+- Next.js Route Handlers (API routes under `app/api`)
+- MongoDB (official `mongodb` Node.js driver)
+- JWT authentication using `jose`
+- Password hashing with `bcryptjs`
+- Schema validation using `zod`
+
+### Other Libraries and Tooling
+
+- React Hook Form + `@hookform/resolvers`
+- `next-themes` for theme support
+- `lucide-react` icons
+- `@vercel/analytics`
+- Seed and maintenance scripts in `scripts/`
+
+## Architecture Overview
+
+1. Passenger submits complaint details and optional image.
+2. Image is uploaded to `public/uploads` through API.
+3. Complaint is registered in MongoDB with generated complaint ID.
+4. For train complaints with images, optional model inference is called via `MODEL_INFERENCE_URL`.
+5. Complaint is routed to role-specific users based on category, train mapping, and nearest station logic.
+6. Admin and role dashboards consume API routes for live complaint operations and analytics.
+
+## Project Structure
+
+```text
 Rail_Madad/
-│── app/ (Next.js frontend)
-│── templates/
-│   └── index.html (Image upload UI)
-│── uploads/ (Stored complaint images)
-│── model.py (AI classification logic)
-│── app.py (Flask backend)
-│── complaints.db (Database)
-│── requirements.txt
-🚀 Getting Started
-🔹 Frontend (Next.js)
-npm install
-npm run dev
+|- app/                        # Next.js App Router pages + API routes
+|  |- admin/                   # Admin pages (analytics, complaints, map, settings)
+|  |- role-login/              # Role login and role dashboards
+|  |- api/                     # Backend route handlers
+|- components/                 # Reusable UI and feature components
+|- lib/
+|  |- server/                  # DB, auth, stations, image classifier logic
+|- data/                       # Static data (for example stations.csv)
+|- scripts/                    # Seed and maintenance scripts
+|- public/uploads/             # Uploaded complaint images
+```
 
+## Getting Started
 
+### 1. Install dependencies
 
-🔹 Backend (Flask)
-pip install -r requirements.txt
-python app.py
+```bash
+pnpm install
+```
 
+### 2. Configure environment variables
 
+Create a `.env.local` file with at least:
 
-📡 API Endpoint
-POST /api/upload
+```env
+MONGODB_URI=your_mongodb_connection_string
+AUTH_SECRET=your_strong_secret
+MODEL_INFERENCE_URL=https://your-model-endpoint.example/predict
+MODEL_API_KEY=optional_api_key
+```
 
-Form Data:
+### 3. Run the development server
 
-image → complaint image
-lat → latitude (optional)
-lon → longitude (optional)
-timestamp → image timestamp
+```bash
+pnpm dev
+```
 
-Response:
+### 4. Open application
 
-{
-  "predicted_category": "dirty toilet",
-  "confidence": 92,
-  "place": "Bangalore, India",
-  "ocr_text": "...",
-  "image_url": "/uploads/file.jpg"
-}
-🧪 AI Categories
+Visit `http://localhost:3000`.
 
-The model classifies complaints into categories like:
+## Key API Areas
 
-Dirty Toilet
-Broken Socket
-Fan Not Working
-Overcrowded Coach
-Water Leakage
-Torn Seat
-Broken Window
-Cleanliness Issue
-Electrical Issue
-🎯 Project Objective
+- Public complaints
+  - `POST /api/complaints/upload`
+  - `POST /api/complaints/register`
+  - `GET /api/complaints/track?id=RMXXXXXXXX`
+- Admin
+  - `POST /api/admin/login`
+  - `POST /api/admin/logout`
+  - `GET /api/admin/complaints`
+  - `GET /api/admin/analytics`
+- Role operations
+  - Railway Staff, RPF, and Station Master login, assignment, and status update APIs
 
-To automate railway complaint management by:
+## Useful Scripts
 
-Reducing manual workload
-Improving classification accuracy
-Enabling faster complaint resolution
-Providing better passenger experience
+```bash
+pnpm seed:admins
+pnpm seed:users
+pnpm seed:railway-staff
+pnpm seed:rpf
+pnpm seed:station-master
+pnpm cleanup:images
+```
 
-As highlighted in the project report, the system improves efficiency, transparency, and prioritization in grievance handling.
+## Notes
 
-🔮 Future Enhancements
-📊 Admin Dashboard with analytics
-🔥 Heatmaps for complaint density
-☁️ Cloud deployment (AWS / Render)
-📱 Mobile app integration
-🎥 Video-based complaint support
-👨‍💻 Team
-C H Prabhu Kishor
-Harshan Gowda K S
-Pothula Bharath
-Sachin
-📜 License
+- This README reflects the current codebase architecture in this repository.
+- Older Flask/SQLite references are obsolete for the current implementation.
 
-This project is for academic and research purposes.
+## Team
+
+- C H Prabhu Kishor
+- Harshan Gowda K S
+- Pothula Bharath
+- Sachin
+
+## License
+
+For academic and research purposes.

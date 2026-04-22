@@ -53,6 +53,26 @@ const predefinedRailwayStaff = [
     district: 'Bangalore Rural',
     mobile: '9898989898',
   },
+  {
+    username: 'staff_s5_16207',
+    password: 'staff@123',
+    role: 'railway_staff',
+    coach: 'S5',
+    train_number: '16207',
+    name: 'Suresh B',
+    district: 'Mysuru',
+    mobile: '9977001122',
+  },
+  {
+    username: 'staff_b2_16207',
+    password: 'staff@123',
+    role: 'railway_staff',
+    coach: 'B2',
+    train_number: '16207',
+    name: 'Ravi Kumar',
+    district: 'Mysuru',
+    mobile: '9966003344',
+  },
 ]
 
 const client = new MongoClient(uri)

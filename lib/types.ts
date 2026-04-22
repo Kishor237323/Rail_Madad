@@ -7,6 +7,14 @@ export type ComplaintCategory =
   | "medical"
   | "catering"
   | "water"
+  | "dirty_toilet"
+  | "floor_cleanliness"
+  | "light_not_working"
+  | "switch_issue"
+  | "socket_issue"
+  | "fan_not_working"
+  | "tap_issue"
+  | "seat_issue"
   | "other";
 
 export type ComplaintPriority = "low" | "medium" | "high" | "critical";
@@ -54,6 +62,14 @@ export const CATEGORY_LABELS: Record<ComplaintCategory, string> = {
   medical: "Medical Emergency",
   catering: "Catering/Food Issue",
   water: "Water Supply Issue",
+  dirty_toilet: "Dirty Toilet / Hygiene Issue",
+  floor_cleanliness: "Floor Cleanliness",
+  light_not_working: "Light Not Working",
+  switch_issue: "Switch Issue",
+  socket_issue: "Socket Issue",
+  fan_not_working: "Fan Not Working",
+  tap_issue: "Tap / Water Issue",
+  seat_issue: "Seat Issue",
   other: "Other Issue",
 };
 

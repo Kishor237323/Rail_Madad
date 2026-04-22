@@ -3,6 +3,8 @@ import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -22,6 +24,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "File must be an image" },
         { status: 400 }
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      console.error(`[Upload] File too large: ${file.size} bytes`);
+      return NextResponse.json(
+        { error: "File too large. Please upload an image up to 20 MB." },
+        { status: 413 }
       );
     }
 

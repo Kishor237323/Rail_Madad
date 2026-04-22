@@ -3,34 +3,50 @@ import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/server/db";
 
 const categoryMap: Record<string, string> = {
-  dirty_toilet: "cleanliness",
-  floor_cleanliness: "cleanliness",
-  light_not_working: "electrical",
-  switch_issue: "electrical",
-  socket_issue: "electrical",
-  fan_not_working: "electrical",
-  tap_issue: "water",
-  seat_issue: "infrastructure",
+  dirty_toilet: "dirty_toilet",
+  floor_cleanliness: "floor_cleanliness",
+  light_not_working: "light_not_working",
+  switch_issue: "switch_issue",
+  socket_issue: "socket_issue",
+  fan_not_working: "fan_not_working",
+  tap_issue: "tap_issue",
+  seat_issue: "seat_issue",
   medical: "medical",
-  fire: "security",
+  fire: "fire",
   security: "security",
   crowd: "overcrowding",
   "medical emergency": "medical",
   "security emergency": "security",
-  "fire emergency": "security",
+  "overcrowding issue": "overcrowding",
 };
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const mode = searchParams.get("mode")?.trim().toLowerCase();
     const id = searchParams.get("id")?.trim().toUpperCase();
+    const pnr = searchParams.get("pnr")?.trim();
+    const phone = searchParams.get("phone")?.trim();
 
-    if (!id) {
-      return NextResponse.json({ error: "Complaint ID is required." }, { status: 400 });
+    const query: Record<string, string> = {};
+
+    if (mode === "pnr" && pnr) {
+      query.pnr = pnr;
+    } else if (mode === "phone" && phone) {
+      query.phone = phone;
+    } else if (id) {
+      query.complaintId = id;
+    } else {
+      return NextResponse.json({ error: "Complaint ID, PNR, or phone number is required." }, { status: 400 });
     }
 
     const db = await getDatabase();
-    const complaint = await db.collection("complaints").findOne<{ [key: string]: unknown }>({ complaintId: id });
+    const complaint = await db
+      .collection("complaints")
+      .find<{ [key: string]: unknown }>(query)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(1)
+      .next();
 
     if (!complaint) {
       return NextResponse.json({ error: "Complaint not found." }, { status: 404 });
@@ -43,7 +59,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       complaint: {
-        id: String(complaint.complaintId || id),
+        id: String(complaint.complaintId || id || pnr || phone || ""),
         category: mappedCategory,
         description: String(complaint.description || "No description provided."),
         location: {
@@ -74,6 +90,8 @@ export async function GET(request: Request) {
           : complaint.assignedTo
             ? String(complaint.assignedTo)
             : undefined,
+        pnr: String(complaint.pnr || ""),
+        phone: String(complaint.phone || complaint.mobile || ""),
       },
     });
   } catch {

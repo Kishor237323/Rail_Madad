@@ -42,12 +42,12 @@ type ComplaintMode = "train" | "emergency";
 
 const DEMO_OTP = "123456";
 const DESCRIPTION_LIMIT = 300;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
 const EMERGENCY_COMPLAINT_CATEGORIES = [
   "Medical",
   "Fire",
-  "Security",
+  "Security", 
   "Crowd",
 ];
 
@@ -238,7 +238,7 @@ export function ComplaintForm() {
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setImageError("File too large. Please upload an image up to 5 MB.");
+      setImageError("File too large. Please upload an image up to 20 MB.");
       return;
     }
 
@@ -386,6 +386,7 @@ export function ComplaintForm() {
           complaintId,
           complaintMode,
           pnr,
+          phone,
           category: complaintMode === "emergency" ? category : undefined,
           description,
           trainDetails,
@@ -726,7 +727,7 @@ export function ComplaintForm() {
               <UploadCloud className="mx-auto mb-2 h-8 w-8 text-blue-700" />
               <p className="text-sm text-slate-700">Drag & drop image here</p>
               <p className="text-xs text-slate-500">or use the buttons below</p>
-              <p className="mt-1 text-xs text-slate-500">Max 5 MB</p>
+              <p className="mt-1 text-xs text-slate-500">Max 20 MB</p>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">

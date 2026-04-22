@@ -35,15 +35,26 @@ const statusConfig: Record<ComplaintStatus, { icon: typeof CheckCircle2; color: 
 function TrackPageContent() {
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id") || "";
+  const initialMode = (searchParams.get("mode") || "id") as "id" | "pnr" | "phone";
   
   const [complaintId, setComplaintId] = useState(initialId);
+  const [searchMode, setSearchMode] = useState<"id" | "pnr" | "phone">(initialMode);
   const [searchedId, setSearchedId] = useState(initialId);
   const [isSearching, setIsSearching] = useState(false);
   const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  const fetchComplaintById = async (id: string): Promise<Complaint | null> => {
-    const response = await fetch(`/api/complaints/track?id=${encodeURIComponent(id)}`);
+  const fetchComplaint = async (value: string, mode: "id" | "pnr" | "phone"): Promise<Complaint | null> => {
+    const params = new URLSearchParams();
+
+    if (mode === "id") {
+      params.set("id", value);
+    } else {
+      params.set("mode", mode);
+      params.set(mode, value);
+    }
+
+    const response = await fetch(`/api/complaints/track?${params.toString()}`);
 
     if (!response.ok) {
       return null;
@@ -71,7 +82,7 @@ function TrackPageContent() {
     setNotFound(false);
     setSearchedId(complaintId);
     
-    const found = await fetchComplaintById(complaintId);
+    const found = await fetchComplaint(complaintId, searchMode);
     
     if (found) {
       setComplaint(found);
@@ -94,14 +105,14 @@ function TrackPageContent() {
 
     const loadInitial = async () => {
       setIsSearching(true);
-      const found = await fetchComplaintById(initialId);
+      const found = await fetchComplaint(initialId, initialMode);
       setComplaint(found);
       setNotFound(!found);
       setIsSearching(false);
     };
 
     loadInitial();
-  }, [initialId]);
+  }, [initialId, initialMode]);
 
   const StatusIcon = complaint ? statusConfig[complaint.status].icon : Clock;
 
@@ -119,22 +130,42 @@ function TrackPageContent() {
                 Track Your Complaint
               </CardTitle>
               <CardDescription>
-                Enter your complaint ID to check the current status and resolution progress
+                Enter your complaint ID, PNR, or phone number to check the current status and resolution progress
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-3">
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant={searchMode === "id" ? "default" : "outline"} size="sm" onClick={() => setSearchMode("id")}>
+                    Complaint ID
+                  </Button>
+                  <Button type="button" variant={searchMode === "pnr" ? "default" : "outline"} size="sm" onClick={() => setSearchMode("pnr")}>
+                    PNR
+                  </Button>
+                  <Button type="button" variant={searchMode === "phone" ? "default" : "outline"} size="sm" onClick={() => setSearchMode("phone")}>
+                    Phone Number
+                  </Button>
+                </div>
                 <div className="flex-1">
                   <Label htmlFor="complaint-id" className="sr-only">
-                    Complaint ID
+                    {searchMode === "id" ? "Complaint ID" : searchMode === "pnr" ? "PNR" : "Phone Number"}
                   </Label>
                   <Input
                     id="complaint-id"
-                    placeholder="Enter Complaint ID (e.g., RMXYZ123)"
+                    placeholder={
+                      searchMode === "id"
+                        ? "Enter Complaint ID (e.g., RMXYZ123)"
+                        : searchMode === "pnr"
+                          ? "Enter PNR Number"
+                          : "Enter Phone Number"
+                    }
                     value={complaintId}
-                    onChange={(e) => setComplaintId(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setComplaintId(searchMode === "id" ? value.toUpperCase() : value.replace(/\D/g, "").slice(0, 10));
+                    }}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="font-mono"
+                    className={searchMode === "id" ? "font-mono" : ""}
                   />
                 </div>
                 <Button onClick={handleSearch} disabled={isSearching || !complaintId.trim()}>
@@ -161,7 +192,7 @@ function TrackPageContent() {
                     Complaint Not Found
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    No complaint found with ID: <span className="font-mono font-medium">{searchedId}</span>
+                    No complaint found with {searchMode === "id" ? "ID" : searchMode === "pnr" ? "PNR" : "phone number"}: <span className="font-mono font-medium">{searchedId}</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Please check the ID and try again, or contact support at 139.
@@ -290,6 +321,18 @@ function TrackPageContent() {
 
               {/* Details Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Complaint Type</p>
+                        <p className="font-medium text-foreground">{CATEGORY_LABELS[complaint.category]}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-3">

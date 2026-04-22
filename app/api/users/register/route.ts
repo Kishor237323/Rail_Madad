@@ -1,4 +1,5 @@
 import { hash } from "bcryptjs";
+import { MongoServerError } from "mongodb";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -46,8 +47,6 @@ export async function POST(request: Request) {
     const db = await getDatabase();
     const users = db.collection("users");
 
-    await users.createIndex({ username: 1 }, { unique: true });
-
     const existing = await users.findOne({ username: data.username });
     if (existing) {
       return NextResponse.json({ error: "Username already exists. Please choose another." }, { status: 409 });
@@ -71,7 +70,13 @@ export async function POST(request: Request) {
       success: true,
       message: "Registration successful. Please login using your credentials.",
     });
-  } catch {
+  } catch (error) {
+    console.error("[users/register] Registration failed:", error);
+
+    if (error instanceof MongoServerError && error.code === 11000) {
+      return NextResponse.json({ error: "Username already exists. Please choose another." }, { status: 409 });
+    }
+
     return NextResponse.json({ error: "Unable to register user." }, { status: 500 });
   }
 }
