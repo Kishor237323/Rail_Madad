@@ -81,10 +81,6 @@ MONGODB_URI=your_mongodb_connection_string
 AUTH_SECRET=your_strong_secret
 MODEL_INFERENCE_URL=https://your-model-endpoint.example/predict
 MODEL_API_KEY=optional_api_key
-
-# OTP / SMS configuration
-# Fast2SMS settings
-FAST2SMS_API_KEY=your_fast2sms_api_key
 ```
 
 ### 3. Run the development server
