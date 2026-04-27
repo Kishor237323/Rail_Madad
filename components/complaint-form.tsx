@@ -40,7 +40,6 @@ type TrainDetails = {
 
 type ComplaintMode = "train" | "emergency";
 
-const DEMO_OTP = "123456";
 const DESCRIPTION_LIMIT = 300;
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
@@ -121,6 +120,7 @@ export function ComplaintForm() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpError, setOtpError] = useState("");
+  const [otpInfo, setOtpInfo] = useState("");
 
   const [pnr, setPnr] = useState("");
   const [complaintMode, setComplaintMode] = useState<ComplaintMode>("train");
@@ -172,39 +172,83 @@ export function ComplaintForm() {
 
   const handleSendOtp = async () => {
     setOtpError("");
+    setOtpInfo("");
 
     if (!/^\d{10}$/.test(phone)) {
       setOtpError("Please enter a valid 10-digit phone number.");
       return;
     }
 
-    setIsSendingOtp(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setOtpSent(true);
-    setOtpVerified(false);
-    setIsSendingOtp(false);
+    try {
+      setIsSendingOtp(true);
+
+      const response = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone }),
+      });
+
+      const data = (await response.json()) as { error?: string; message?: string; debugOtp?: string; smsError?: string };
+
+      if (!response.ok) {
+        setOtpError(data.error ?? "Unable to send OTP right now.");
+        return;
+      }
+
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtp("");
+      if (data.debugOtp) {
+        setOtpInfo(`Dev OTP: ${data.debugOtp}`);
+      } else {
+        setOtpInfo(data.message ?? "OTP sent successfully.");
+      }
+    } catch {
+      setOtpError("Unable to send OTP right now.");
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleVerifyOtp = async () => {
     setOtpError("");
+    setOtpInfo("");
 
     if (!/^\d{6}$/.test(otp)) {
       setOtpError("Please enter a valid 6-digit OTP.");
       return;
     }
 
-    setIsVerifyingOtp(true);
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    try {
+      setIsVerifyingOtp(true);
 
-    if (otp === DEMO_OTP) {
+      const response = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone, otp }),
+      });
+
+      const data = (await response.json()) as { error?: string; message?: string };
+
+      if (!response.ok) {
+        setOtpVerified(false);
+        setOtpError(data.error ?? "Invalid OTP. Please try again.");
+        return;
+      }
+
       setOtpVerified(true);
       setOtpError("");
-    } else {
+      setOtpInfo(data.message ?? "OTP verified successfully.");
+    } catch {
       setOtpVerified(false);
-      setOtpError("Invalid OTP. Please try again.");
+      setOtpError("Unable to verify OTP right now.");
+    } finally {
+      setIsVerifyingOtp(false);
     }
-
-    setIsVerifyingOtp(false);
   };
 
   const handleFetchPnr = async () => {
@@ -547,7 +591,15 @@ export function ComplaintForm() {
                   maxLength={10}
                   placeholder="Enter 10-digit phone number"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  onChange={(e) => {
+                    const nextPhone = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setPhone(nextPhone);
+                    setOtp("");
+                    setOtpSent(false);
+                    setOtpVerified(false);
+                    setOtpError("");
+                    setOtpInfo("");
+                  }}
                   className="rounded-xl bg-white"
                 />
               </div>
@@ -580,7 +632,6 @@ export function ComplaintForm() {
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       className="rounded-xl bg-white"
                     />
-                    <p className="mt-2 text-xs font-medium text-blue-700">Demo OTP: 123456</p>
                   </div>
                   <Button
                     type="button"
@@ -596,6 +647,7 @@ export function ComplaintForm() {
             ) : null}
 
             {otpVerified ? <p className="mt-3 text-sm font-medium text-green-600">✅ Verified</p> : null}
+            {otpInfo ? <p className="mt-2 text-sm text-blue-700">{otpInfo}</p> : null}
             {otpError ? <p className="mt-2 text-sm text-red-600">{otpError}</p> : null}
           </section>
         ) : (
