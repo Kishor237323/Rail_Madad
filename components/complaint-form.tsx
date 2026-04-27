@@ -40,7 +40,6 @@ type TrainDetails = {
 
 type ComplaintMode = "train" | "emergency";
 
-const DEMO_OTP = "123456";
 const DESCRIPTION_LIMIT = 300;
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
@@ -121,6 +120,7 @@ export function ComplaintForm() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpError, setOtpError] = useState("");
+  const [debugOtp, setDebugOtp] = useState("");
 
   const [pnr, setPnr] = useState("");
   const [complaintMode, setComplaintMode] = useState<ComplaintMode>("train");
@@ -179,10 +179,38 @@ export function ComplaintForm() {
     }
 
     setIsSendingOtp(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setOtpSent(true);
-    setOtpVerified(false);
-    setIsSendingOtp(false);
+    setDebugOtp("");
+
+    try {
+      const response = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone }),
+      });
+
+      const data = (await response.json()) as { error?: string; debugOtp?: string };
+
+      if (!response.ok) {
+        setOtpSent(false);
+        setOtpVerified(false);
+        setOtpError(data.error || "Unable to send OTP right now.");
+        return;
+      }
+
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtp("");
+      setOtpError("");
+      setDebugOtp(data.debugOtp || "");
+    } catch {
+      setOtpSent(false);
+      setOtpVerified(false);
+      setOtpError("Unable to send OTP right now.");
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleVerifyOtp = async () => {
@@ -194,17 +222,33 @@ export function ComplaintForm() {
     }
 
     setIsVerifyingOtp(true);
-    await new Promise((resolve) => setTimeout(resolve, 900));
 
-    if (otp === DEMO_OTP) {
+    try {
+      const response = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone, otp }),
+      });
+
+      const data = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        setOtpVerified(false);
+        setOtpError(data.error || "Invalid OTP. Please try again.");
+        return;
+      }
+
       setOtpVerified(true);
       setOtpError("");
-    } else {
+      setDebugOtp("");
+    } catch {
       setOtpVerified(false);
-      setOtpError("Invalid OTP. Please try again.");
+      setOtpError("Unable to verify OTP right now.");
+    } finally {
+      setIsVerifyingOtp(false);
     }
-
-    setIsVerifyingOtp(false);
   };
 
   const handleFetchPnr = async () => {
@@ -580,7 +624,7 @@ export function ComplaintForm() {
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       className="rounded-xl bg-white"
                     />
-                    <p className="mt-2 text-xs font-medium text-blue-700">Demo OTP: 123456</p>
+                    {debugOtp ? <p className="mt-2 text-xs font-medium text-blue-700">Debug OTP: {debugOtp}</p> : null}
                   </div>
                   <Button
                     type="button"

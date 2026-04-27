@@ -81,6 +81,18 @@ MONGODB_URI=your_mongodb_connection_string
 AUTH_SECRET=your_strong_secret
 MODEL_INFERENCE_URL=https://your-model-endpoint.example/predict
 MODEL_API_KEY=optional_api_key
+
+# OTP / SMS configuration
+# Fast2SMS settings
+FAST2SMS_API_KEY=your_fast2sms_api_key
+# Optional: choose SMS provider
+SMS_PROVIDER=auto
+# Twilio settings (optional)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_FROM_NUMBER=+1xxxxxxxxxx
+# Development only: expose debug OTP in API response when SMS cannot be sent
+OTP_EXPOSE_DEBUG_OTP=false
 ```
 
 ### 3. Run the development server
