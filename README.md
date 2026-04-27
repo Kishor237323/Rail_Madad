@@ -97,6 +97,18 @@ pnpm dev
 
 Visit `http://localhost:3000`.
 
+## Android App Wrapper
+
+This repository now includes Capacitor support for Android.
+
+```bash
+pnpm cap:add:android
+pnpm cap:sync:android
+pnpm cap:open:android
+```
+
+If you want the Android app to load the hosted web app, set `CAPACITOR_APP_URL` in your environment before syncing. The placeholder `public/index.html` exists only to satisfy Capacitor's packaging step.
+
 ## Key API Areas
 
 - Public complaints
