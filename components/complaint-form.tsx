@@ -361,7 +361,39 @@ export function ComplaintForm() {
 
     let finalLocation: { latitude: number; longitude: number } | null = null;
 
-    if (useManualLocation) {
+    if (complaintMode === "emergency") {
+      if (useManualLocation) {
+        const parsedLatitude = Number(manualLatitude);
+        const parsedLongitude = Number(manualLongitude);
+
+        if (Number.isNaN(parsedLatitude) || Number.isNaN(parsedLongitude)) {
+          setLocationError("Please enter valid latitude and longitude values.");
+          return;
+        }
+
+        if (parsedLatitude < -90 || parsedLatitude > 90 || parsedLongitude < -180 || parsedLongitude > 180) {
+          setLocationError("Latitude must be between -90 and 90, and longitude between -180 and 180.");
+          return;
+        }
+
+        finalLocation = {
+          latitude: parsedLatitude,
+          longitude: parsedLongitude,
+        };
+        setLocation(finalLocation);
+        setLocationError("");
+      } else {
+        finalLocation = location;
+
+        if (!finalLocation) {
+          finalLocation = await captureCurrentLocation();
+        }
+
+        if (!finalLocation) {
+          return;
+        }
+      }
+    } else if (useManualLocation) {
       const parsedLatitude = Number(manualLatitude);
       const parsedLongitude = Number(manualLongitude);
 
@@ -382,15 +414,7 @@ export function ComplaintForm() {
       setLocation(finalLocation);
       setLocationError("");
     } else {
-      finalLocation = location;
-
-      if (!finalLocation) {
-        finalLocation = await captureCurrentLocation();
-      }
-
-      if (!finalLocation) {
-        return;
-      }
+      finalLocation = location || null;
     }
 
     try {
@@ -822,34 +846,33 @@ export function ComplaintForm() {
             </section>
           ) : null}
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-blue-700" />
-              <h3 className="font-medium text-slate-900">Location Capture</h3>
-            </div>
+          {complaintMode === "emergency" && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-blue-700" />
+                <h3 className="font-medium text-slate-900">Location Capture</h3>
+              </div>
 
-            <label className="mb-3 flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={useManualLocation}
-                onChange={(e) => {
-                  setUseManualLocation(e.target.checked);
-                  setLocationError("");
-                }}
-              />
-              Use manual latitude/longitude (testing)
-            </label>
+              <label className="mb-3 flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={useManualLocation}
+                  onChange={(e) => {
+                    setUseManualLocation(e.target.checked);
+                    setLocationError("");
+                  }}
+                />
+                Use manual latitude/longitude (testing)
+              </label>
 
-            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm text-slate-700">
-              <p className="font-medium">Helps in faster resolution</p>
-              <p className="mt-1">
-                {useManualLocation
-                  ? "Manual coordinates will be used for routing during submission."
-                  : complaintMode === "emergency"
-                    ? "Location will be captured automatically during emergency complaint submission."
-                    : "Location can be captured now or automatically during submission."}
-              </p>
-            </div>
+              <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm text-slate-700">
+                <p className="font-medium">Helps in faster resolution</p>
+                <p className="mt-1">
+                  {useManualLocation
+                    ? "Manual coordinates will be used for routing during submission."
+                    : "Location will be captured automatically during emergency complaint submission."}
+                </p>
+              </div>
 
             {useManualLocation ? (
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -880,18 +903,7 @@ export function ComplaintForm() {
               </div>
             ) : null}
 
-            {complaintMode === "train" && !useManualLocation ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={captureCurrentLocation}
-                disabled={isCapturingLocation}
-                className="mt-3 rounded-xl"
-              >
-                {isCapturingLocation ? <Spinner className="mr-2" /> : <Navigation className="mr-2 h-4 w-4" />}
-                Get Location
-              </Button>
-            ) : null}
+
 
             {isCapturingLocation && !useManualLocation ? (
               <p className="mt-3 flex items-center gap-2 text-sm text-blue-700">
@@ -905,7 +917,8 @@ export function ComplaintForm() {
               </p>
             ) : null}
             {locationError ? <p className="mt-3 text-sm text-red-600">{locationError}</p> : null}
-          </section>
+            </section>
+          )}
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2">
