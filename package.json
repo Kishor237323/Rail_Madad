@@ -57,7 +57,10 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.564.0",
     "mongodb": "^7.1.1",
+<<<<<<< HEAD
     "next": "^15.5.20",
+=======
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
     "next-themes": "^0.4.6",
     "react": "19.2.4",
     "react-day-picker": "9.13.2",

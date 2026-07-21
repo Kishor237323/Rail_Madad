@@ -20,7 +20,10 @@ if (process.env.NODE_ENV !== 'production') {
   global._mongoClientPromise = clientPromise
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
 export async function getDatabase(): Promise<Db> {
   const mongoClient = await clientPromise
   return mongoClient.db('rail_madad')

@@ -12,10 +12,13 @@ const verifyOtpSchema = z.object({
 const OTP_MAX_VERIFY_ATTEMPTS = 5;
 const OTP_VERIFY_BLOCK_MS = 15 * 60 * 1000;
 
+<<<<<<< HEAD
 function getPassengerUsername(phone: string) {
   return `passenger_${phone}`;
 }
 
+=======
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
 type OtpRecord = {
   phone: string;
   otpHash: string;
@@ -90,7 +93,10 @@ export async function POST(request: Request) {
       { role: "passenger", mobile: phone },
       {
         $set: {
+<<<<<<< HEAD
           username: getPassengerUsername(phone),
+=======
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
           mobile: phone,
           role: "passenger",
           lastLoginAt: now,

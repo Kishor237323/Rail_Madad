@@ -45,7 +45,11 @@ export default function AnalyticsPage() {
   const [statusDataRaw, setStatusDataRaw] = useState<Array<{ name: string; value: number }>>([]);
   const [trendData, setTrendData] = useState<Array<{ date: string; complaints: number; resolved: number }>>([]);
   const [hourlyData, setHourlyData] = useState<Array<{ hour: string; complaints: number }>>([]);
+<<<<<<< HEAD
   const [trendRange, setTrendRange] = useState<"7" | "30" | "90">("30");
+=======
+  const [trendRange, setTrendRange] = useState<"7" | "30">("30");
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
 
   useEffect(() => {
     setIsClient(true);
@@ -133,6 +137,7 @@ export default function AnalyticsPage() {
     };
 
     load();
+<<<<<<< HEAD
 
     const refresh = () => {
       void load();
@@ -169,6 +174,8 @@ export default function AnalyticsPage() {
       complaintChannel?.removeEventListener("message", handleBroadcastMessage);
       complaintChannel?.close();
     };
+=======
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
   }, []);
 
   // Transform category data for charts
@@ -208,6 +215,7 @@ export default function AnalyticsPage() {
     }));
   }, [statusDataRaw]);
 
+<<<<<<< HEAD
   const fallbackTrendData = useMemo(() => {
     const today = new Date();
 
@@ -271,6 +279,14 @@ export default function AnalyticsPage() {
   const trendRangeLabel = trendRange === "7" ? "7 Days" : trendRange === "30" ? "30 Days" : "90 Days";
 
   const hasTrendData = trendChartData.length > 0;
+=======
+  const displayedTrendData = useMemo(
+    () => (trendRange === "7" ? trendData.slice(-7) : trendData),
+    [trendData, trendRange]
+  );
+
+  const hasTrendData = displayedTrendData.length > 0;
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
   const hasCategoryData = barChartData.length > 0;
   const hasPriorityData = priorityData.length > 0;
   const hasStatusData = statusData.length > 0;
@@ -329,9 +345,13 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Avg Response Time</p>
+<<<<<<< HEAD
                 <p className="text-3xl font-bold text-foreground">
                   {loading ? "..." : stats.resolved > 0 ? `${stats.avgResponseTimeHours}h` : "N/A"}
                 </p>
+=======
+                <p className="text-3xl font-bold text-foreground">{loading ? "..." : `${stats.avgResponseTimeHours}h`}</p>
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingDown className="h-4 w-4 text-success" />
                   <span className="text-xs text-muted-foreground">From complaints with `resolvedAt`</span>
@@ -367,7 +387,11 @@ export default function AnalyticsPage() {
       <Card className="border-border">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
+<<<<<<< HEAD
               <CardTitle>Complaint Trends (Last {trendRangeLabel})</CardTitle>
+=======
+            <CardTitle>Complaint Trends (Last {trendRange} Days)</CardTitle>
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -385,6 +409,7 @@ export default function AnalyticsPage() {
               >
                 30 Days
               </Button>
+<<<<<<< HEAD
               <Button
                 type="button"
                 size="sm"
@@ -393,11 +418,14 @@ export default function AnalyticsPage() {
               >
                 90 Days
               </Button>
+=======
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div style={{ height: 350 }}>
+<<<<<<< HEAD
             {!isClient || loading ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                 Loading trend chart...
@@ -429,6 +457,39 @@ export default function AnalyticsPage() {
                   <Legend />
                   <Area type="monotone" dataKey="complaints" stroke="#0B3C5D" fillOpacity={1} fill="url(#colorComplaints)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} name="Total Complaints" />
                   <Area type="monotone" dataKey="resolved" stroke="#22c55e" fillOpacity={1} fill="url(#colorResolved)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} name="Resolved" />
+=======
+            {!isClient || (!hasTrendData && !loading) ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                {loading ? "Loading trend chart..." : "No trend data available"}
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={displayedTrendData}>
+                <defs>
+                  <linearGradient id="colorComplaints" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0B3C5D" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#0B3C5D" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: "#ffffff", 
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"
+                  }}
+                />
+                <Legend />
+                <Area type="monotone" dataKey="complaints" stroke="#0B3C5D" fillOpacity={1} fill="url(#colorComplaints)" strokeWidth={2} name="Total Complaints" />
+                <Area type="monotone" dataKey="resolved" stroke="#22c55e" fillOpacity={1} fill="url(#colorResolved)" strokeWidth={2} name="Resolved" />
+>>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
                 </AreaChart>
               </ResponsiveContainer>
             )}
