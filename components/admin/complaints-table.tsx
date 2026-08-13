@@ -74,11 +74,7 @@ export function ComplaintsTable({ complaints: initialComplaints }: ComplaintsTab
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-<<<<<<< HEAD
       timeZone: "UTC",
-=======
-      timeZone: "Asia/Kolkata",
->>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
     }).format(date);
 
   const filteredComplaints = complaints.filter((complaint) => {

@@ -1,11 +1,11 @@
 import { StationMasterDashboard } from "@/components/role-login/station-master-dashboard";
 
-export default async function StationMasterDashboardPage({
+export default function StationMasterDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ station?: string }>;
+  searchParams?: { station?: string | string[] };
 }) {
-  const params = await searchParams;
+  const username = typeof searchParams?.station === "string" ? searchParams.station : Array.isArray(searchParams?.station) ? searchParams.station[0] ?? "" : "";
 
-  return <StationMasterDashboard username={params.station ?? ""} />;
+  return <StationMasterDashboard username={username} />;
 }

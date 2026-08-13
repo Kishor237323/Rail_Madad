@@ -471,7 +471,7 @@ export function ComplaintForm() {
       }
 
       setCrn(data.complaintId ?? complaintId);
-<<<<<<< HEAD
+
       if (typeof window !== "undefined") {
         const updateStamp = Date.now().toString();
         try {
@@ -488,8 +488,7 @@ export function ComplaintForm() {
           channel.close();
         }
       }
-=======
->>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
+
       setSubmitted(true);
     } catch {
       setSubmitError("Unable to register complaint right now. Please try again.");

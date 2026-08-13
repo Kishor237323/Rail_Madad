@@ -49,7 +49,6 @@ export async function GET() {
     const statusCounts = new Map<string, number>();
 
     const today = new Date();
-<<<<<<< HEAD
     const utcToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
     const dateKeys: string[] = [];
     const trendMap = new Map<string, { date: string; complaints: number; resolved: number }>();
@@ -63,19 +62,6 @@ export async function GET() {
       dateKeys.push(key);
       trendMap.set(key, {
         date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
-=======
-    const dateKeys: string[] = [];
-    const trendMap = new Map<string, { date: string; complaints: number; resolved: number }>();
-
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today);
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      dateKeys.push(key);
-      trendMap.set(key, {
-        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
->>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
         complaints: 0,
         resolved: 0,
       });

@@ -1,10 +1,11 @@
 import { RailwayStaffDashboard } from "@/components/role-login/railway-staff-dashboard";
 
-export default async function RoleDashboardPage({
+export default function RoleDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ staff?: string }>;
+  searchParams?: { staff?: string | string[] };
 }) {
-  const params = await searchParams;
-  return <RailwayStaffDashboard staffUsername={params.staff ?? ""} />;
+  const staff = typeof searchParams?.staff === "string" ? searchParams.staff : Array.isArray(searchParams?.staff) ? searchParams.staff[0] ?? "" : "";
+
+  return <RailwayStaffDashboard staffUsername={staff} />;
 }

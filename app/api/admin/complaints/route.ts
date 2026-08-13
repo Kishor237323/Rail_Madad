@@ -52,7 +52,6 @@ const normalizeCategory = (value: unknown) => {
 		"medical",
 		"catering",
 		"water",
-<<<<<<< HEAD
 		"dirty_toilet",
 		"floor_cleanliness",
 		"light_not_working",
@@ -61,22 +60,16 @@ const normalizeCategory = (value: unknown) => {
 		"fan_not_working",
 		"tap_issue",
 		"seat_issue",
-=======
->>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
 		"other",
 	]);
 	if (known.has(category)) return category;
 	if (category.includes("toilet") || category.includes("clean")) return "cleanliness";
 	if (category.includes("light") || category.includes("electrical")) return "electrical";
 	if (category.includes("water") || category.includes("tap")) return "water";
-<<<<<<< HEAD
 	if (category.includes("seat") || category.includes("coach")) return "seat_issue";
 	if (category.includes("switch")) return "switch_issue";
 	if (category.includes("socket")) return "socket_issue";
 	if (category.includes("fan")) return "fan_not_working";
-=======
-	if (category.includes("seat") || category.includes("coach")) return "infrastructure";
->>>>>>> fc56a02792718b2e094d5f39d67d549a7a53459e
 	if (category.includes("crowd")) return "overcrowding";
 	if (category.includes("security")) return "security";
 	if (category.includes("medical") || category.includes("fire")) return "medical";
