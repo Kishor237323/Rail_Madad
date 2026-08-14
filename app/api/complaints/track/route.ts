@@ -94,7 +94,16 @@ export async function GET(request: Request) {
         phone: String(complaint.phone || complaint.mobile || ""),
       },
     });
-  } catch {
-    return NextResponse.json({ error: "Unable to fetch complaint." }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Complaint track lookup failed:", message, error);
+
+    return NextResponse.json(
+      {
+        error: "Unable to fetch complaint.",
+        ...(process.env.NODE_ENV !== "production" ? { details: message } : {}),
+      },
+      { status: 500 },
+    );
   }
 }
