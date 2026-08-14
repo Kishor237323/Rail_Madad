@@ -130,6 +130,77 @@ pnpm seed:station-master
 pnpm cleanup:images
 ```
 
+
+
+## 🐳 Docker Setup
+
+ The Rail Madad application is containerized using Docker for consistent development and deployment.
+
+### Dockerfile
+
+The project uses a Node.js 20 Alpine image to run the Next.js application.
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+### Build Docker Image
+
+Run the following command from the project root:
+
+```bash
+docker build -t rail-madad .
+```
+
+### Run the Container
+
+```bash
+docker run -p 3000:3000 --env-file .env.local rail-madad
+```
+
+The application can then be accessed at:
+
+```text
+http://localhost:3000
+```
+
+### Docker Commands
+
+```bash
+# Check running containers
+docker ps
+
+# View container logs
+docker logs <container_id>
+
+# Stop a container
+docker stop <container_id>
+
+# Remove a container
+docker rm <container_id>
+
+# List Docker images
+docker images
+```
+
+### AI Model
+
+The **ViT-B/16 model** runs separately on Google Colab using GPU resources. The Docker container runs the main Next.js application and communicates with the model service for image classification.
+
 ## Notes
 
 - This README reflects the current codebase architecture in this repository.
